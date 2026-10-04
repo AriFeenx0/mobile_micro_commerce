@@ -1,8 +1,110 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if false;
+
+    // ---------- Helper functions ----------
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function myRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isShopOwner() {
+      return isSignedIn() && myRole() == 'owner';
+    }
+
+    // ---------- users ----------
+    // ใครก็อ่านโปรไฟล์คนอื่นได้ (เช่น โชว์ชื่อในแชท/ออเดอร์)
+    // แต่แก้ไขได้เฉพาะโปรไฟล์ตัวเอง และห้ามเปลี่ยน role ตัวเอง
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId)
+                    && request.resource.data.role == resource.data.role;
+      allow delete: if false;
+    }
+
+    // ---------- books ----------
+    // ทุกคนอ่านได้ (รวมคนไม่ล็อกอิน เพื่อดูรายการหนังสือก่อนสมัคร)
+    // เขียนได้เฉพาะเจ้าของร้าน และต้องเป็นเจ้าของ book นั้นจริง
+    match /books/{bookId} {
+      allow read: if true;
+      allow create: if isShopOwner()
+                    && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if isShopOwner()
+                    && resource.data.ownerId == request.auth.uid;
+
+      // ---------- books/{bookId}/volumes ----------
+      match /volumes/{volumeId} {
+        allow read: if true;
+        allow create, delete: if isShopOwner()
+                    && get(/databases/$(database)/documents/books/$(bookId)).data.ownerId == request.auth.uid;
+
+        // แก้ไขปกติ (ราคา/สต๊อก/สภาพ) เฉพาะเจ้าของร้าน
+        // ส่วนลูกค้าได้รับอนุญาตให้แก้ "เฉพาะ" การล็อกสต๊อกตอน checkout เท่านั้น
+        // (ควรทำผ่าน Cloud Function + Transaction ในงานจริง ข้อนี้คือ fallback ฝั่ง client)
+        allow update: if (
+              isShopOwner() &&
+              get(/databases/$(database)/documents/books/$(bookId)).data.ownerId == request.auth.uid
+            ) || (
+              isSignedIn() &&
+              request.resource.data.diff(resource.data).affectedKeys()
+                .hasOnly(['lockedUntil', 'lockedByOrderId', 'updatedAt'])
+            );
+      }
+    }
+
+    // ---------- orders ----------
+    // อ่าน/เขียนได้เฉพาะคนที่เกี่ยวข้องกับออเดอร์นั้น (ลูกค้าเจ้าของออเดอร์ หรือเจ้าของร้าน)
+    match /orders/{orderId} {
+      allow read: if isSignedIn() &&
+            (resource.data.customerId == request.auth.uid ||
+             resource.data.ownerId == request.auth.uid);
+
+      allow create: if isSignedIn() &&
+            request.resource.data.customerId == request.auth.uid;
+
+      // ลูกค้าแก้ไขได้แค่ตอนยังไม่ชำระ (เช่น อัปโหลดสลิป)
+      // เจ้าของร้านแก้ไขได้เพื่อเปลี่ยนสถานะ/ยืนยันการชำระ/ใส่เลขพัสดุ
+      allow update: if isSignedIn() && (
+            (resource.data.customerId == request.auth.uid &&
+             resource.data.status in ['รอชำระเงิน', 'รอตรวจสอบสลิป']) ||
+            (resource.data.ownerId == request.auth.uid)
+          );
+
+      allow delete: if false; // ไม่ลบออเดอร์จริง ใช้สถานะ "ยกเลิก" แทน
+    }
+
+    // ---------- coupons ----------
+    match /coupons/{couponId} {
+      allow read: if true; // ลูกค้าต้องอ่านได้เพื่อเช็กโค้ดตอน checkout
+      allow create, update, delete: if isShopOwner()
+            && resource == null || resource.data.ownerId == request.auth.uid;
+    }
+
+    // ---------- chat_rooms ----------
+    match /chat_rooms/{roomId} {
+      allow read, update: if isSignedIn()
+            && request.auth.uid in resource.data.participants;
+      allow create: if isSignedIn()
+            && request.auth.uid in request.resource.data.participants;
+      allow delete: if false;
+
+      match /messages/{messageId} {
+        allow read: if isSignedIn()
+            && request.auth.uid in get(/databases/$(database)/documents/chat_rooms/$(roomId)).data.participants;
+        allow create: if isSignedIn()
+            && request.resource.data.senderId == request.auth.uid
+            && request.auth.uid in get(/databases/$(database)/documents/chat_rooms/$(roomId)).data.participants;
+        allow update, delete: if false; // แชทแก้ไข/ลบย้อนหลังไม่ได้
+      }
     }
   }
 }

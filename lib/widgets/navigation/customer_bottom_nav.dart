@@ -16,10 +16,10 @@ class CustomerBottomNav extends StatelessWidget {
       selectedIndex: selectedIndex,
       onDestinationSelected: onDestinationSelected,
       destinations: const [
-        NavigationDestination(icon: Icon(Icons.menu_book), label: 'Books'),
-        NavigationDestination(icon: Icon(Icons.shopping_bag), label: 'Cart'),
-        NavigationDestination(icon: Icon(Icons.chat), label: 'Chat'),
-        NavigationDestination(icon: Icon(Icons.person), label: 'Profile'),
+        NavigationDestination(icon: Icon(Icons.menu_book), label: 'รายการสินค้า'),
+        NavigationDestination(icon: Icon(Icons.shopping_bag), label: 'ตะกร้าสินค้า'),
+        NavigationDestination(icon: Icon(Icons.chat), label: 'แชท'),
+        NavigationDestination(icon: Icon(Icons.person), label: 'โปรไฟล์'),
       ],
     );
   }
