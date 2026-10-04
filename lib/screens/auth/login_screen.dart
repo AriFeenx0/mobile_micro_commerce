@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+
 import '../../core/constants/app_routes.dart';
+import '../../widgets/auth_form_components.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -27,13 +29,16 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final horizontalPadding = constraints.maxWidth < 420 ? 28.0 : 48.0;
+            final horizontalPadding =
+                constraints.maxWidth < AuthFormStyle.compactBreakpoint
+                ? AuthFormStyle.compactHorizontalPadding
+                : AuthFormStyle.wideHorizontalPadding;
             return SingleChildScrollView(
               padding: EdgeInsets.fromLTRB(
                 horizontalPadding,
-                30,
+                AuthFormStyle.topPadding,
                 horizontalPadding,
-                28,
+                AuthFormStyle.bottomPadding,
               ),
               child: Form(
                 key: _formKey,
@@ -41,30 +46,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const SizedBox(height: 12),
-                    Center(
-                      child: Container(
-                        width: 92,
-                        height: 92,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF0F0F0),
-                          border: Border.all(
-                            color: const Color(0xFFA0A0A0),
-                            width: 2,
-                          ),
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                        child: const Text(
-                          'Logo',
-                          style: TextStyle(
-                            color: Color(0xFF999999),
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                    ),
+                    AuthFormStyle.logo(),
                     const SizedBox(height: 22),
-                    _FieldLabel('Email'),
+                    AuthFormStyle.label('Email'),
                     const SizedBox(height: 6),
                     TextFormField(
                       controller: _emailController,
@@ -72,10 +56,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       textInputAction: TextInputAction.next,
                       autofillHints: const [AutofillHints.email],
                       style: const TextStyle(
-                        fontSize: 16,
+                        fontSize: AuthFormStyle.inputFontSize,
                         color: Color(0xFF333333),
                       ),
-                      decoration: _inputDecoration('you@email.com'),
+                      decoration: AuthFormStyle.inputDecoration(
+                        'you@email.com',
+                      ),
                       validator: (value) {
                         final email = value?.trim() ?? '';
                         if (email.isEmpty || !email.contains('@')) {
@@ -85,7 +71,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    _FieldLabel('Password'),
+                    AuthFormStyle.label('Password'),
                     const SizedBox(height: 6),
                     TextFormField(
                       controller: _passwordController,
@@ -93,10 +79,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       textInputAction: TextInputAction.done,
                       autofillHints: const [AutofillHints.password],
                       style: const TextStyle(
-                        fontSize: 16,
+                        fontSize: AuthFormStyle.inputFontSize,
                         color: Color(0xFF333333),
                       ),
-                      decoration: _inputDecoration('••••••••'),
+                      decoration: AuthFormStyle.inputDecoration('••••••••'),
                       validator: (value) =>
                           (value?.isEmpty ?? true) ? 'กรุณากรอกรหัสผ่าน' : null,
                       onFieldSubmitted: (_) => _submit(),
@@ -121,19 +107,23 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 12),
                     SizedBox(
-                      height: 56,
+                      height: AuthFormStyle.buttonHeight,
                       child: FilledButton(
                         onPressed: _submit,
                         style: FilledButton.styleFrom(
                           backgroundColor: const Color(0xFF333333),
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(
+                              AuthFormStyle.buttonRadius,
+                            ),
                           ),
                         ),
                         child: const Text(
                           'เข้าสู่ระบบ',
-                          style: TextStyle(fontSize: 18),
+                          style: TextStyle(
+                            fontSize: AuthFormStyle.buttonFontSize,
+                          ),
                         ),
                       ),
                     ),
@@ -170,28 +160,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  InputDecoration _inputDecoration(String hint) => InputDecoration(
-    hintText: hint,
-    hintStyle: const TextStyle(color: Color(0xFFB8B8B8), fontSize: 16),
-    contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
-    enabledBorder: OutlineInputBorder(
-      borderSide: const BorderSide(color: Color(0xFFA0A0A0), width: 2),
-      borderRadius: BorderRadius.circular(12),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderSide: const BorderSide(color: Color(0xFF555555), width: 2),
-      borderRadius: BorderRadius.circular(12),
-    ),
-    errorBorder: OutlineInputBorder(
-      borderSide: const BorderSide(color: Color(0xFFB44343), width: 2),
-      borderRadius: BorderRadius.circular(12),
-    ),
-    focusedErrorBorder: OutlineInputBorder(
-      borderSide: const BorderSide(color: Color(0xFFB44343), width: 2),
-      borderRadius: BorderRadius.circular(12),
-    ),
-  );
-
   void _submit() {
     if (_formKey.currentState?.validate() ?? false) {
       _showMessage('ระบบเข้าสู่ระบบยังไม่พร้อมใช้งาน');
@@ -203,19 +171,4 @@ class _LoginScreenState extends State<LoginScreen> {
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(message)));
   }
-}
-
-class _FieldLabel extends StatelessWidget {
-  const _FieldLabel(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(left: 14),
-    child: Text(
-      text,
-      style: const TextStyle(color: Color(0xFF999999), fontSize: 15),
-    ),
-  );
 }
