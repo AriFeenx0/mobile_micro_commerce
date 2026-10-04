@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "346550914256",
+    "project_id": "mobile-micro-commerce",
+    "storage_bucket": "mobile-micro-commerce.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:346550914256:android:4e8819097d71e158b022d5",
+        "android_client_info": {
+          "package_name": "com.example.mobile_micro_commerce"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDUHdqoYYtM5Se1CE3uKgwJ0GRHfWoE7OY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

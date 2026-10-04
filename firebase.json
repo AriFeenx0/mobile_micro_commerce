@@ -1,0 +1,26 @@
+{
+	"flutter": {
+		"platforms": {
+			"android": {
+				"default": {
+					"projectId": "mobile-micro-commerce",
+					"appId": "1:346550914256:android:4e8819097d71e158b022d5",
+					"fileOutput": "android/app/google-services.json"
+				}
+			},
+			"dart": {
+				"lib/firebase_options.dart": {
+					"projectId": "mobile-micro-commerce",
+					"configurations": {
+						"android": "1:346550914256:android:4e8819097d71e158b022d5",
+						"web": "1:346550914256:web:bc9f53f8f6346b2ab022d5"
+					}
+				}
+			}
+		}
+	},
+	"firestore": {
+		"rules": "firestore.rules",
+		"indexes": "firestore.indexes.json"
+	}
+}
