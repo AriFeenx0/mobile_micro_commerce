@@ -89,6 +89,32 @@ class AuthService {
     return UserModel.fromJson(document.id, data);
   }
 
+  Future<UserModel> updateCurrentUserProfile({
+    required String name,
+    required String phone,
+    required String address,
+  }) async {
+    final firebaseUser = _auth.currentUser;
+    if (firebaseUser == null) {
+      throw StateError('กรุณาเข้าสู่ระบบก่อนแก้ไขโปรไฟล์');
+    }
+
+    final currentProfile =
+        await getUserProfile(firebaseUser.uid) ??
+        _userModelFromFirebaseUser(firebaseUser);
+    final updatedProfile = currentProfile.copyWith(
+      name: name.trim(),
+      phone: phone.trim(),
+      address: address.trim(),
+    );
+
+    await firebaseUser.updateDisplayName(updatedProfile.name);
+    await _users
+        .doc(firebaseUser.uid)
+        .set(updatedProfile.toJson(), SetOptions(merge: true));
+    return updatedProfile;
+  }
+
   Future<void> sendPasswordResetEmail(String email) =>
       _auth.sendPasswordResetEmail(email: email.trim());
 

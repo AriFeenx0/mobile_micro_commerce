@@ -2,9 +2,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_routes.dart';
+import '../../../models/book_model.dart';
 import '../../../models/user_model.dart';
 import '../../../services/auth_service.dart';
+import '../../../services/book_service.dart';
 import '../../../widgets/navigation/customer_bottom_nav.dart';
+import '../book_detail/book_detail_screen.dart';
 
 class BookListScreen extends StatefulWidget {
   const BookListScreen({super.key});
@@ -15,19 +18,13 @@ class BookListScreen extends StatefulWidget {
 
 class _BookListScreenState extends State<BookListScreen> {
   final _authService = AuthService();
+  final _bookService = BookService();
   final _searchController = TextEditingController();
 
   String _selectedCategory = 'ทั้งหมด';
   String? _profileUid;
   Future<UserModel?>? _profileFuture;
-
-  static const _categories = ['ทั้งหมด', 'หมวดหมู่1', 'หมวดหมู่2'];
-  static const _books = [
-    _BookPreview(title: 'ชื่อสินค้า', subtitle: 'Text รอง', category: 'หมวดหมู่1'),
-    _BookPreview(title: 'ชื่อสินค้า', subtitle: 'Text รอง', category: 'หมวดหมู่2'),
-    _BookPreview(title: 'ชื่อสินค้า', subtitle: 'Text รอง', category: 'หมวดหมู่1'),
-    _BookPreview(title: 'ชื่อสินค้า', subtitle: 'Text รอง', category: 'หมวดหมู่2'),
-  ];
+  Stream<List<BookModel>>? _booksStream;
 
   @override
   void dispose() {
@@ -59,6 +56,7 @@ class _BookListScreenState extends State<BookListScreen> {
         if (_profileUid != firebaseUser.uid) {
           _profileUid = firebaseUser.uid;
           _profileFuture = _authService.getUserProfile(firebaseUser.uid);
+          _booksStream = _bookService.watchBooks();
         }
 
         return FutureBuilder<UserModel?>(
@@ -98,130 +96,177 @@ class _BookListScreenState extends State<BookListScreen> {
   }
 
   Widget _buildCatalog() {
-    final query = _searchController.text.trim().toLowerCase();
-    final visibleBooks = _books.where((book) {
-      final matchesCategory = _selectedCategory == 'ทั้งหมด' ||
-          book.category == _selectedCategory;
-      final matchesQuery = query.isEmpty ||
-          '${book.title} ${book.subtitle}'.toLowerCase().contains(query);
-      return matchesCategory && matchesQuery;
-    }).toList();
-
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
             final horizontalPadding = constraints.maxWidth < 420 ? 20.0 : 32.0;
-            return CustomScrollView(
-              slivers: [
-                SliverPadding(
-                  padding: EdgeInsets.fromLTRB(
-                    horizontalPadding,
-                    48,
-                    horizontalPadding,
-                    24,
-                  ),
-                  sliver: SliverToBoxAdapter(
-                    child: TextField(
-                      controller: _searchController,
-                      onChanged: (_) => setState(() {}),
-                      textInputAction: TextInputAction.search,
-                      decoration: InputDecoration(
-                        hintText: 'ค้นหา...',
-                        hintStyle: const TextStyle(
-                          color: Color(0xFFB8B8B8),
-                          fontSize: 16,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 14,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide: const BorderSide(
-                            color: Color(0xFF49413F),
-                            width: 1.5,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide: const BorderSide(
-                            color: Color(0xFF292929),
-                            width: 1.5,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+            return StreamBuilder<List<BookModel>>(
+              stream: _booksStream,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return _CatalogState(
+                    message: 'โหลดรายการหนังสือไม่ได้ กรุณาลองใหม่',
+                    onRetry: () => setState(() {
+                      _booksStream = _bookService.watchBooks();
+                    }),
+                  );
+                }
+
+                final books = snapshot.data ?? const <BookModel>[];
+                final categories = <String>{
+                  for (final book in books) ...book.category,
+                }.toList()..sort();
+                final categoryOptions = ['ทั้งหมด', ...categories];
+                if (!categoryOptions.contains(_selectedCategory)) {
+                  _selectedCategory = 'ทั้งหมด';
+                }
+                final query = _searchController.text.trim().toLowerCase();
+                final visibleBooks = books.where((book) {
+                  final matchesCategory =
+                      _selectedCategory == 'ทั้งหมด' ||
+                      book.category.contains(_selectedCategory);
+                  final matchesQuery =
+                      query.isEmpty ||
+                      [
+                        book.title,
+                        book.author,
+                        book.publisher,
+                        book.description,
+                        ...book.category,
+                      ].any((value) => value.toLowerCase().contains(query));
+                  return matchesCategory && matchesQuery;
+                }).toList();
+
+                return CustomScrollView(
+                  slivers: [
+                    SliverPadding(
+                      padding: EdgeInsets.fromLTRB(
+                        horizontalPadding,
+                        48,
+                        horizontalPadding,
+                        24,
                       ),
-                    ),
-                  ),
-                ),
-                SliverToBoxAdapter(
-                  child: SizedBox(
-                    height: 42,
-                    child: ListView.separated(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: horizontalPadding,
-                      ),
-                      scrollDirection: Axis.horizontal,
-                      itemCount: _categories.length,
-                      separatorBuilder: (_, _) => const SizedBox(width: 8),
-                      itemBuilder: (context, index) {
-                        final category = _categories[index];
-                        final isSelected = category == _selectedCategory;
-                        return ChoiceChip(
-                          label: Text(category),
-                          selected: isSelected,
-                          onSelected: (_) => setState(() {
-                            _selectedCategory = category;
-                          }),
-                          showCheckmark: false,
-                          labelStyle: TextStyle(
-                            color: isSelected ? Colors.white : Colors.black87,
-                            fontSize: 15,
-                          ),
-                          backgroundColor: Colors.white,
-                          selectedColor: const Color(0xFF222222),
-                          side: BorderSide(
-                            color: isSelected
-                                ? const Color(0xFF222222)
-                                : const Color(0xFF777777),
-                          ),
-                          shape: const StadiumBorder(),
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                SliverPadding(
-                  padding: EdgeInsets.fromLTRB(
-                    horizontalPadding,
-                    22,
-                    horizontalPadding,
-                    28,
-                  ),
-                  sliver: visibleBooks.isEmpty
-                      ? const SliverToBoxAdapter(
-                          child: Padding(
-                            padding: EdgeInsets.only(top: 36),
-                            child: Center(child: Text('ไม่พบสินค้า')),
-                          ),
-                        )
-                      : SliverGrid(
-                          delegate: SliverChildBuilderDelegate(
-                            (context, index) => _BookCard(book: visibleBooks[index]),
-                            childCount: visibleBooks.length,
-                          ),
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                                crossAxisSpacing: 24,
-                                mainAxisSpacing: 28,
-                                childAspectRatio: 0.72,
+                      sliver: SliverToBoxAdapter(
+                        child: TextField(
+                          controller: _searchController,
+                          onChanged: (_) => setState(() {}),
+                          textInputAction: TextInputAction.search,
+                          decoration: InputDecoration(
+                            hintText: 'ค้นหา...',
+                            hintStyle: const TextStyle(
+                              color: Color(0xFFB8B8B8),
+                              fontSize: 16,
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: const BorderSide(
+                                color: Color(0xFF49413F),
+                                width: 1.5,
                               ),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: const BorderSide(
+                                color: Color(0xFF292929),
+                                width: 1.5,
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
                         ),
-                ),
-              ],
+                      ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: SizedBox(
+                        height: 42,
+                        child: ListView.separated(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: horizontalPadding,
+                          ),
+                          scrollDirection: Axis.horizontal,
+                          itemCount: categoryOptions.length,
+                          separatorBuilder: (_, _) => const SizedBox(width: 8),
+                          itemBuilder: (context, index) {
+                            final category = categoryOptions[index];
+                            final isSelected = category == _selectedCategory;
+                            return ChoiceChip(
+                              label: Text(category),
+                              selected: isSelected,
+                              onSelected: (_) => setState(() {
+                                _selectedCategory = category;
+                              }),
+                              showCheckmark: false,
+                              labelStyle: TextStyle(
+                                color: isSelected
+                                    ? Colors.white
+                                    : Colors.black87,
+                                fontSize: 15,
+                              ),
+                              backgroundColor: Colors.white,
+                              selectedColor: const Color(0xFF222222),
+                              side: BorderSide(
+                                color: isSelected
+                                    ? const Color(0xFF222222)
+                                    : const Color(0xFF777777),
+                              ),
+                              shape: const StadiumBorder(),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                    SliverPadding(
+                      padding: EdgeInsets.fromLTRB(
+                        horizontalPadding,
+                        22,
+                        horizontalPadding,
+                        28,
+                      ),
+                      sliver: visibleBooks.isEmpty
+                          ? const SliverToBoxAdapter(
+                              child: Padding(
+                                padding: EdgeInsets.only(top: 36),
+                                child: Center(child: Text('ไม่พบหนังสือ')),
+                              ),
+                            )
+                          : SliverGrid(
+                              delegate: SliverChildBuilderDelegate(
+                                (context, index) => _BookCard(
+                                  book: visibleBooks[index],
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute<void>(
+                                      builder: (_) => BookDetailScreen(
+                                        book: visibleBooks[index],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                childCount: visibleBooks.length,
+                              ),
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2,
+                                    crossAxisSpacing: 24,
+                                    mainAxisSpacing: 28,
+                                    childAspectRatio: 0.72,
+                                  ),
+                            ),
+                    ),
+                  ],
+                );
+              },
             );
           },
         ),
@@ -255,59 +300,92 @@ class _BookListScreenState extends State<BookListScreen> {
   }
 
   void _goToLogin() {
-    Navigator.pushNamedAndRemoveUntil(
-      context,
-      AppRoutes.login,
-      (_) => false,
-    );
+    Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (_) => false);
   }
 }
 
 class _BookCard extends StatelessWidget {
-  const _BookCard({required this.book});
+  const _BookCard({required this.book, required this.onTap});
 
-  final _BookPreview book;
+  final BookModel book;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFF999999)),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFFD9D9D9),
-                border: Border.all(color: const Color(0xFFA5A5A5), width: 1.5),
-                borderRadius: BorderRadius.circular(9),
+    return Material(
+      color: Colors.white,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Ink(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            border: Border.all(color: const Color(0xFF999999)),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(5),
+                  child: book.images.isEmpty
+                      ? const ColoredBox(color: Color(0xFFD9D9D9))
+                      : Image.network(
+                          book.images.first,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) =>
+                              const ColoredBox(color: Color(0xFFD9D9D9)),
+                        ),
+                ),
               ),
-            ),
+              const SizedBox(height: 8),
+              Text(
+                book.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 15, color: Colors.black),
+              ),
+              Text(
+                book.author,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 12, color: Color(0xFF777777)),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                book.category.isEmpty
+                    ? book.language
+                    : book.category.join(' · '),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 12, color: Colors.black87),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            book.title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 15, color: Colors.black),
-          ),
-          Text(
-            book.subtitle,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 12, color: Color(0xFF777777)),
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            'ราคา / เล่ม',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontSize: 18, color: Colors.black),
-          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CatalogState extends StatelessWidget {
+  const _CatalogState({required this.message, this.onRetry});
+
+  final String message;
+  final VoidCallback? onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(message),
+          if (onRetry != null) ...[
+            const SizedBox(height: 12),
+            TextButton(onPressed: onRetry, child: const Text('ลองใหม่')),
+          ],
         ],
       ),
     );
@@ -354,16 +432,4 @@ class _AccessPage extends StatelessWidget {
       ),
     );
   }
-}
-
-class _BookPreview {
-  const _BookPreview({
-    required this.title,
-    required this.subtitle,
-    required this.category,
-  });
-
-  final String title;
-  final String subtitle;
-  final String category;
 }

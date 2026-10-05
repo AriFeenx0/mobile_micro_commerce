@@ -26,6 +26,20 @@ class BookService {
   CollectionReference<Map<String, dynamic>> get _books =>
       _firestore.collection(booksCollection);
 
+  Stream<List<BookModel>> watchBooks() {
+    return _books.snapshots().map((snapshot) {
+      final books = snapshot.docs
+          .map((document) => BookModel.fromJson(document.id, document.data()))
+          .toList();
+      books.sort(
+        (first, second) => (second.createdAt ?? DateTime(0)).compareTo(
+          first.createdAt ?? DateTime(0),
+        ),
+      );
+      return books;
+    });
+  }
+
   Stream<List<BookModel>> watchBooksByOwner(String ownerId) {
     return _books.where('ownerId', isEqualTo: ownerId).snapshots().map((
       snapshot,
@@ -57,6 +71,23 @@ class BookService {
       (first, second) => first.volumeNumber.compareTo(second.volumeNumber),
     );
     return volumes;
+  }
+
+  Stream<List<BookVolumeModel>> watchBookVolumes(String bookId) {
+    return _books.doc(bookId).collection(volumesCollection).snapshots().map((
+      snapshot,
+    ) {
+      final volumes = snapshot.docs
+          .map(
+            (document) =>
+                BookVolumeModel.fromJson(document.id, bookId, document.data()),
+          )
+          .toList();
+      volumes.sort(
+        (first, second) => first.volumeNumber.compareTo(second.volumeNumber),
+      );
+      return volumes;
+    });
   }
 
   Future<BookModel> createBook({
