@@ -18,6 +18,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _firstNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   final _authService = AuthService();
   bool _isSubmitting = false;
 
@@ -27,6 +28,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _firstNameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -93,6 +95,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       autofillHints: const [AutofillHints.newPassword],
                       textInputAction: TextInputAction.done,
                       validator: _requiredValidator('กรุณากรอกรหัสผ่าน'),
+                      onFieldSubmitted: (_) => _submit(),
+                    ),
+                    _buildField(
+                      label: 'Confirm Password',
+                      hint: '••••••••',
+                      controller: _confirmPasswordController,
+                      obscureText: true,
+                      textInputAction: TextInputAction.done,
+                      validator: (value) {
+                        if (value?.isEmpty ?? true) {
+                          return 'กรุณายืนยันรหัสผ่าน';
+                        }
+                        if (value != _passwordController.text) {
+                          return 'รหัสผ่านไม่ตรงกัน';
+                        }
+                        return null;
+                      },
                       onFieldSubmitted: (_) => _submit(),
                     ),
                     const SizedBox(height: 4),

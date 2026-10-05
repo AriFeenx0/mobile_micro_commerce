@@ -1,21 +1,42 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../../models/order_model.dart';
+import '../../models/user_model.dart';
+import '../../providers/auth_provider.dart';
+import '../../services/order_service.dart';
 
 class OwnerBottomNav extends StatelessWidget {
   const OwnerBottomNav({
     super.key,
     required this.selectedIndex,
     required this.onDestinationSelected,
-    this.newOrderCount = 6,
-    this.unreadChatCount = 2,
   });
 
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
-  final int newOrderCount;
-  final int unreadChatCount;
 
   @override
   Widget build(BuildContext context) {
+    return Consumer<AuthProvider>(
+      builder: (context, auth, _) {
+        final profile = auth.profile;
+        if (profile == null || profile.role != UserRole.owner) {
+          return _buildNavigation(context, false);
+        }
+        return StreamBuilder<List<OrderModel>>(
+          stream: OrderService().watchOrdersForOwner(profile.id),
+          builder: (context, snapshot) {
+            final hasUnconfirmedOrder = (snapshot.data ?? const <OrderModel>[])
+                .any((order) => order.status == OrderStatus.pendingSlipReview);
+            return _buildNavigation(context, hasUnconfirmedOrder);
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildNavigation(BuildContext context, bool hasUnconfirmedOrder) {
     return NavigationBarTheme(
       data: NavigationBarThemeData(
         backgroundColor: Colors.white,
@@ -57,24 +78,22 @@ class OwnerBottomNav extends StatelessWidget {
           ),
           NavigationDestination(
             icon: Badge(
-              label: Text('$newOrderCount'),
+              isLabelVisible: hasUnconfirmedOrder,
+              smallSize: 9,
+              backgroundColor: Colors.red,
               child: const Icon(Icons.receipt_long_outlined),
             ),
             selectedIcon: Badge(
-              label: Text('$newOrderCount'),
+              isLabelVisible: hasUnconfirmedOrder,
+              smallSize: 9,
+              backgroundColor: Colors.red,
               child: const Icon(Icons.receipt_long),
             ),
             label: 'ออเดอร์',
           ),
-          NavigationDestination(
-            icon: Badge(
-              label: Text('$unreadChatCount'),
-              child: const Icon(Icons.chat_bubble_outline),
-            ),
-            selectedIcon: Badge(
-              label: Text('$unreadChatCount'),
-              child: const Icon(Icons.chat_bubble),
-            ),
+          const NavigationDestination(
+            icon: Icon(Icons.chat_bubble_outline),
+            selectedIcon: Icon(Icons.chat_bubble),
             label: 'แชท',
           ),
           const NavigationDestination(

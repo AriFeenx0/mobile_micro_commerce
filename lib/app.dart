@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import 'core/constants/app_routes.dart';
 import 'core/theme/app_theme.dart';
+import 'models/book_model.dart';
+import 'providers/auth_provider.dart';
+import 'providers/cart_provider.dart';
 import 'screens/auth/edit_profile_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
@@ -24,7 +28,12 @@ class MainApp extends StatelessWidget {
 
 	@override
 	Widget build(BuildContext context) {
-		return MaterialApp(
+		return MultiProvider(
+			providers: [
+				ChangeNotifierProvider(create: (_) => AuthProvider()),
+				ChangeNotifierProvider(create: (_) => CartProvider()),
+			],
+			child: MaterialApp(
 			title: 'Mobile Micro Commerce',
 			theme: AppTheme.light,
 			initialRoute: AppRoutes.login,
@@ -33,7 +42,14 @@ class MainApp extends StatelessWidget {
 				AppRoutes.register: (_) => const RegisterScreen(),
 				AppRoutes.editProfile: (_) => const EditProfileScreen(),
 				AppRoutes.customerBooks: (_) => const BookListScreen(),
-				AppRoutes.customerBookDetail: (_) => const BookDetailScreen(),
+				AppRoutes.customerBookDetail: (context) {
+					final book = ModalRoute.of(context)?.settings.arguments;
+					if (book is BookModel) return BookDetailScreen(book: book);
+					return Scaffold(
+						appBar: AppBar(title: const Text('รายละเอียดหนังสือ')),
+						body: const Center(child: Text('ไม่พบข้อมูลหนังสือ')),
+					);
+				},
 				AppRoutes.customerCart: (_) => const CartScreen(),
 				AppRoutes.customerCheckout: (_) => const CheckoutScreen(),
 				AppRoutes.customerOrderHistory: (_) => const OrderHistoryScreen(),
@@ -46,6 +62,7 @@ class MainApp extends StatelessWidget {
 				AppRoutes.chatRoom: (_) => const ChatRoomScreen(),
 				AppRoutes.profile: (_) => const ProfileScreen(),
 			},
+			),
 		);
 	}
 }
