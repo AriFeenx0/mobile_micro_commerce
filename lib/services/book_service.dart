@@ -1,3 +1,4 @@
+// จัดการข้อมูลหนังสือ เล่มย่อย และสต็อกผ่าน Firestore
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
@@ -208,20 +209,19 @@ class BookService {
             (existingData['createdAt'] as Timestamp?)?.toDate(),
       );
 
-      final existingVolumes = await bookReference
-          .collection(volumesCollection)
-          .get();
+      final volumesReference = bookReference.collection(volumesCollection);
       final volumeIds = volumes
           .map((volume) => 'volume_${volume.volumeNumber}')
           .toSet();
+      final existingVolumeDocuments = await volumesReference.get();
       final batch = _firestore.batch();
-      for (final document in existingVolumes.docs) {
+      for (final document in existingVolumeDocuments.docs) {
         if (!volumeIds.contains(document.id)) batch.delete(document.reference);
       }
       for (final volume in volumes) {
-        final volumeReference = bookReference
-            .collection(volumesCollection)
-            .doc('volume_${volume.volumeNumber}');
+        final volumeReference = volumesReference.doc(
+          'volume_${volume.volumeNumber}',
+        );
         batch.set(volumeReference, volume.toJson());
       }
       batch.set(bookReference, savedBook.toJson());

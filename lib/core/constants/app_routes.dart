@@ -1,3 +1,4 @@
+// รวมชื่อเส้นทางสำหรับนำทางในแอป
 abstract final class AppRoutes {
   static const login = '/login';
   static const register = '/register';

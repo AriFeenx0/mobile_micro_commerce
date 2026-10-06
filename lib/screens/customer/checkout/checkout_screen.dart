@@ -1,3 +1,4 @@
+// รวบรวมที่อยู่และสรุปยอดก่อนเลือกวิธีชำระเงิน
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 

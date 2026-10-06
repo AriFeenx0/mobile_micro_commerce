@@ -1,3 +1,4 @@
+// จัดการสถานะการเข้าสู่ระบบและโปรไฟล์ที่ UI ใช้
 import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';

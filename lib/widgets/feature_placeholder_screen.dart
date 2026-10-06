@@ -1,3 +1,4 @@
+// หน้าตัวอย่างสำหรับฟีเจอร์ที่ยังไม่พร้อมใช้งาน
 import 'package:flutter/material.dart';
 
 class FeaturePlaceholderScreen extends StatelessWidget {

@@ -1,3 +1,4 @@
+// โมเดลห้องแชทและข้อความ พร้อมแปลงข้อมูล Firestore
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ChatRoomModel {

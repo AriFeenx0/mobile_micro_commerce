@@ -1,3 +1,4 @@
+// การ์ดสรุปหนังสือสำหรับแสดงในรายการ
 import 'package:flutter/material.dart';
 
 class BookCard extends StatelessWidget {

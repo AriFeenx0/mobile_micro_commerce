@@ -1,3 +1,4 @@
+// จัดการการเข้าสู่ระบบและโปรไฟล์ผู้ใช้ผ่าน Firebase
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 

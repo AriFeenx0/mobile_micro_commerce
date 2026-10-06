@@ -1,3 +1,4 @@
+// โมเดลคูปองและการคำนวณส่วนลด
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 enum DiscountType { percent, fixed }

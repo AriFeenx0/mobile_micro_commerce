@@ -1,3 +1,4 @@
+// โมเดลหนังสือและแปลงข้อมูลสำหรับจัดเก็บใน Firestore
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class BookModel {

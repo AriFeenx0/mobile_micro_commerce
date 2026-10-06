@@ -1,3 +1,4 @@
+// แสดงและปรับรายการสินค้าในตะกร้าก่อนสั่งซื้อ
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 

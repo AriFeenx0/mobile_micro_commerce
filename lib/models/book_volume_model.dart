@@ -1,3 +1,4 @@
+// โมเดลสต็อกและรายละเอียดของหนังสือแต่ละเล่ม
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class BookVolumeModel {

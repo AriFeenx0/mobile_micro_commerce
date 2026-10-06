@@ -1,3 +1,4 @@
+// หน้าจัดการคูปองที่ยังเป็นหน้าตัวอย่าง
 import 'package:flutter/material.dart';
 import 'package:mobile_micro_commerce/widgets/feature_placeholder_screen.dart';
 

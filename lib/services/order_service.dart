@@ -1,3 +1,4 @@
+// สร้างคำสั่งซื้อและจัดการสถานะกับสต็อกผ่าน Firestore
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
@@ -97,39 +98,22 @@ class OrderService {
       }
       if (order.items.isEmpty) throw StateError('คำสั่งซื้อไม่มีรายการสินค้า');
 
-      final stockChanges = <String, _StockChange>{};
       final bookReferences =
           <String, DocumentReference<Map<String, dynamic>>>{};
       for (final item in order.items) {
-        if (item.bookId.isEmpty || item.volumeId.isEmpty || item.qty < 1) {
-          throw StateError(
-            'ข้อมูลหนังสือหรือจำนวนสินค้าในคำสั่งซื้อไม่ถูกต้อง',
-          );
-        }
-        final bookReference = _firestore
+        bookReferences[item.bookId] = _firestore
             .collection(booksCollection)
             .doc(item.bookId);
-        final volumeReference = bookReference
-            .collection(volumesCollection)
-            .doc(item.volumeId);
-        bookReferences[item.bookId] = bookReference;
-
-        final existingChange = stockChanges[volumeReference.path];
-        stockChanges[volumeReference.path] = _StockChange(
-          reference: volumeReference,
-          quantity: (existingChange?.quantity ?? 0) + item.qty,
-        );
       }
-
-      final bookSnapshots = <String, DocumentSnapshot<Map<String, dynamic>>>{};
       for (final entry in bookReferences.entries) {
-        bookSnapshots[entry.key] = await transaction.get(entry.value);
-      }
-      for (final snapshot in bookSnapshots.values) {
-        if (!snapshot.exists || snapshot.data()?['ownerId'] != owner.uid) {
+        final bookSnapshot = await transaction.get(entry.value);
+        if (!bookSnapshot.exists ||
+            bookSnapshot.data()?['ownerId'] != owner.uid) {
           throw StateError('พบหนังสือที่ไม่ได้เป็นของร้านนี้');
         }
       }
+
+      final stockChanges = _stockChangesForItems(order.items);
 
       final volumeSnapshots =
           <String, DocumentSnapshot<Map<String, dynamic>>>{};
@@ -233,6 +217,28 @@ class OrderService {
       throw StateError('บัญชีนี้ไม่มีสิทธิ์จัดการคำสั่งซื้อ');
     }
     return owner;
+  }
+
+  Map<String, _StockChange> _stockChangesForItems(List<OrderItem> items) {
+    if (items.isEmpty) throw StateError('คำสั่งซื้อไม่มีรายการสินค้า');
+
+    final stockChanges = <String, _StockChange>{};
+    for (final item in items) {
+      if (item.bookId.isEmpty || item.volumeId.isEmpty || item.qty < 1) {
+        throw StateError('ข้อมูลหนังสือหรือจำนวนสินค้าในคำสั่งซื้อไม่ถูกต้อง');
+      }
+      final volumeReference = _firestore
+          .collection(booksCollection)
+          .doc(item.bookId)
+          .collection(volumesCollection)
+          .doc(item.volumeId);
+      final existingChange = stockChanges[volumeReference.path];
+      stockChanges[volumeReference.path] = _StockChange(
+        reference: volumeReference,
+        quantity: (existingChange?.quantity ?? 0) + item.qty,
+      );
+    }
+    return stockChanges;
   }
 }
 
