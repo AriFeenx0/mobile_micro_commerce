@@ -1,3 +1,4 @@
+// รวมรูปแบบและส่วนประกอบฟอร์มเข้าสู่ระบบที่ใช้ร่วมกัน
 import 'package:flutter/material.dart';
 
 abstract final class AuthFormStyle {

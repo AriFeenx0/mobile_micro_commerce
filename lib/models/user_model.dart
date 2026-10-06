@@ -1,3 +1,4 @@
+// โมเดลโปรไฟล์ผู้ใช้และบทบาทในระบบ
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 enum UserRole { customer, owner }

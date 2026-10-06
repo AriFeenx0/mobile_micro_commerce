@@ -1,3 +1,4 @@
+// แสดงภาพรวมและรายการออเดอร์ล่าสุดของเจ้าของร้าน
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -62,7 +63,7 @@ class DashboardScreen extends StatelessWidget {
                                     const Expanded(
                                       child: _MetricPanel(
                                         label: 'ยอดขายวันนี้',
-                                        value: '฿ 2,150',
+                                        value: '฿',
                                       ),
                                     ),
                                     const SizedBox(width: 12),
@@ -87,13 +88,6 @@ class DashboardScreen extends StatelessWidget {
                                       width: 2,
                                     ),
                                     borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: const Text(
-                                    'หนังสือเหลือ 1 เล่ม 8 รายการ',
-                                    style: TextStyle(
-                                      color: Color(0xFF8E681B),
-                                      fontSize: 16,
-                                    ),
                                   ),
                                 ),
                                 const SizedBox(height: 16),

@@ -1,3 +1,4 @@
+// การ์ดแสดงค่าตัวชี้วัดพร้อมไอคอน
 import 'package:flutter/material.dart';
 
 class StatCard extends StatelessWidget {

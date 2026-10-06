@@ -1,3 +1,4 @@
+// แสดงรายการคำสั่งซื้อและปุ่มจัดการตามบทบาท
 import 'package:flutter/material.dart';
 
 import '../models/order_model.dart';
@@ -333,7 +334,7 @@ class _OrderCardState extends State<_OrderCard> {
       builder: (dialogContext) => AlertDialog(
         title: const Text('ยืนยันการชำระเงิน'),
         content: Text(
-          'ยืนยันว่าได้รับยอด ${_formatPrice(widget.order.totalAmount)} แล้วหรือไม่?\nการยืนยันจะตัดสต๊อกหนังสือทันที',
+          'ยืนยันว่าได้รับยอด ${_formatPrice(widget.order.totalAmount)} แล้วหรือไม่?\nการยืนยันจะตัดสต็อกหนังสือทันที',
         ),
         actions: [
           TextButton(
@@ -342,13 +343,13 @@ class _OrderCardState extends State<_OrderCard> {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('ยืนยันและตัดสต๊อก'),
+            child: const Text('ยืนยันและตัดสต็อก'),
           ),
         ],
       ),
     );
     if (confirmed != true) return;
-    await _runAction(callback, successMessage: 'ยืนยันชำระเงินและตัดสต๊อกแล้ว');
+    await _runAction(callback, successMessage: 'ยืนยันชำระเงินและตัดสต็อกแล้ว');
   }
 
   Future<void> _rejectPayment() async {
@@ -358,7 +359,7 @@ class _OrderCardState extends State<_OrderCard> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('ปฏิเสธสลิป?'),
-        content: const Text('คำสั่งซื้อจะถูกยกเลิกและไม่มีการตัดสต๊อก'),
+        content: const Text('คำสั่งซื้อจะถูกยกเลิกและไม่มีการตัดสต็อก'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),

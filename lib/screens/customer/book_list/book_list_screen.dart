@@ -1,11 +1,13 @@
+// แสดงและค้นหารายการหนังสือสำหรับลูกค้า
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../core/constants/app_routes.dart';
 import '../../../models/book_model.dart';
 import '../../../models/user_model.dart';
+import '../../../providers/book_provider.dart';
 import '../../../services/auth_service.dart';
-import '../../../services/book_service.dart';
 import '../../../widgets/navigation/customer_bottom_nav.dart';
 import '../book_detail/book_detail_screen.dart';
 
@@ -18,13 +20,18 @@ class BookListScreen extends StatefulWidget {
 
 class _BookListScreenState extends State<BookListScreen> {
   final _authService = AuthService();
-  final _bookService = BookService();
-  final _searchController = TextEditingController();
+  late final TextEditingController _searchController;
 
-  String _selectedCategory = 'ทั้งหมด';
   String? _profileUid;
   Future<UserModel?>? _profileFuture;
-  Stream<List<BookModel>>? _booksStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController(
+      text: context.read<BookProvider>().appliedFilters.query,
+    );
+  }
 
   @override
   void dispose() {
@@ -56,7 +63,6 @@ class _BookListScreenState extends State<BookListScreen> {
         if (_profileUid != firebaseUser.uid) {
           _profileUid = firebaseUser.uid;
           _profileFuture = _authService.getUserProfile(firebaseUser.uid);
-          _booksStream = _bookService.watchBooks();
         }
 
         return FutureBuilder<UserModel?>(
@@ -102,45 +108,26 @@ class _BookListScreenState extends State<BookListScreen> {
         child: LayoutBuilder(
           builder: (context, constraints) {
             final horizontalPadding = constraints.maxWidth < 420 ? 20.0 : 32.0;
-            return StreamBuilder<List<BookModel>>(
-              stream: _booksStream,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
+            return Consumer<BookProvider>(
+              builder: (context, booksProvider, _) {
+                if (booksProvider.isLoading) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                if (snapshot.hasError) {
+                if (booksProvider.error != null) {
                   return _CatalogState(
                     message: 'โหลดรายการหนังสือไม่ได้ กรุณาลองใหม่',
-                    onRetry: () => setState(() {
-                      _booksStream = _bookService.watchBooks();
-                    }),
+                    onRetry: booksProvider.refresh,
                   );
                 }
 
-                final books = snapshot.data ?? const <BookModel>[];
-                final categories = <String>{
-                  for (final book in books) ...book.category,
-                }.toList()..sort();
-                final categoryOptions = ['ทั้งหมด', ...categories];
-                if (!categoryOptions.contains(_selectedCategory)) {
-                  _selectedCategory = 'ทั้งหมด';
-                }
-                final query = _searchController.text.trim().toLowerCase();
-                final visibleBooks = books.where((book) {
-                  final matchesCategory =
-                      _selectedCategory == 'ทั้งหมด' ||
-                      book.category.contains(_selectedCategory);
-                  final matchesQuery =
-                      query.isEmpty ||
-                      [
-                        book.title,
-                        book.author,
-                        book.publisher,
-                        book.description,
-                        ...book.category,
-                      ].any((value) => value.toLowerCase().contains(query));
-                  return matchesCategory && matchesQuery;
-                }).toList();
+                final categoryOptions = booksProvider.categories;
+                final selectedCategory =
+                    categoryOptions.contains(
+                      booksProvider.appliedFilters.category,
+                    )
+                    ? booksProvider.appliedFilters.category
+                    : 'ทั้งหมด';
+                final visibleBooks = booksProvider.visibleBooks;
 
                 return CustomScrollView(
                   slivers: [
@@ -154,7 +141,7 @@ class _BookListScreenState extends State<BookListScreen> {
                       sliver: SliverToBoxAdapter(
                         child: TextField(
                           controller: _searchController,
-                          onChanged: (_) => setState(() {}),
+                          onChanged: booksProvider.setQuery,
                           textInputAction: TextInputAction.search,
                           decoration: InputDecoration(
                             hintText: 'ค้นหา...',
@@ -196,13 +183,12 @@ class _BookListScreenState extends State<BookListScreen> {
                           separatorBuilder: (_, _) => const SizedBox(width: 8),
                           itemBuilder: (context, index) {
                             final category = categoryOptions[index];
-                            final isSelected = category == _selectedCategory;
+                            final isSelected = category == selectedCategory;
                             return ChoiceChip(
                               label: Text(category),
                               selected: isSelected,
-                              onSelected: (_) => setState(() {
-                                _selectedCategory = category;
-                              }),
+                              onSelected: (_) =>
+                                  booksProvider.setCategory(category),
                               showCheckmark: false,
                               labelStyle: TextStyle(
                                 color: isSelected

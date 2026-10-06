@@ -1,5 +1,7 @@
+// เลือกรูปสลิปและส่งคำสั่งซื้อเพื่อรอตรวจสอบ
 import 'dart:typed_data';
 
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -72,6 +74,30 @@ class _SlipUploadScreenState extends State<SlipUploadScreen> {
                 const SizedBox(height: 28),
                 const _SectionLabel('แนบสลิปการโอนเงิน'),
                 const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF5F5F5),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'ธนาคารกสิกรไทย',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      SizedBox(height: 6),
+                      Text('ชื่อบัญชี: ร้านหนังสือตัวอย่าง'),
+                      SizedBox(height: 4),
+                      Text(
+                        'เลขที่บัญชี: 123-4-56789-0',
+                        style: TextStyle(fontSize: 16),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
                 Semantics(
                   button: true,
                   label: 'เลือกรูปสลิป',
@@ -232,6 +258,8 @@ class _SlipUploadScreenState extends State<SlipUploadScreen> {
         _showMessage(
           error is StateError
               ? error.message.toString()
+              : error is FirebaseException
+              ? _firebaseErrorMessage(error)
               : 'บันทึกคำสั่งซื้อไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่อ',
         );
       }
@@ -251,6 +279,22 @@ class _SlipUploadScreenState extends State<SlipUploadScreen> {
         ? price.toStringAsFixed(0)
         : price.toStringAsFixed(2);
     return '฿$amount';
+  }
+
+  String _firebaseErrorMessage(FirebaseException error) {
+    debugPrint(
+      'Order submission Firebase error [${error.plugin}/${error.code}]: '
+      '${error.message}',
+    );
+    return switch (error.code) {
+      'permission-denied' =>
+        'ไม่มีสิทธิ์บันทึกคำสั่งซื้อ ตรวจสอบ Firestore Rules และบัญชีที่เข้าสู่ระบบ',
+      'unavailable' || 'network-request-failed' =>
+        'เชื่อมต่อ Firebase ไม่ได้ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่',
+      _ =>
+        'บันทึกคำสั่งซื้อไม่สำเร็จ (${error.code}): '
+            '${error.message ?? 'ไม่ทราบสาเหตุ'}',
+    };
   }
 }
 

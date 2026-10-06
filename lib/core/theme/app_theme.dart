@@ -1,3 +1,4 @@
+// กำหนดธีมหลักของแอป
 import 'package:flutter/material.dart';
 
 abstract final class AppTheme {

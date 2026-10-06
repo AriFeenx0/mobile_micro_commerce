@@ -1,3 +1,4 @@
+// แถบนำทางหลักสำหรับหน้าฝั่งลูกค้า
 import 'package:flutter/material.dart';
 
 class CustomerBottomNav extends StatelessWidget {

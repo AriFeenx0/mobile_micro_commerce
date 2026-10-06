@@ -1,8 +1,10 @@
+// แสดงและจัดการหนังสือของเจ้าของร้าน
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../core/constants/app_routes.dart';
 import '../../../models/book_model.dart';
+import '../../../models/book_volume_model.dart';
 import '../../../models/user_model.dart';
 import '../../../services/auth_service.dart';
 import '../../../services/book_service.dart';
@@ -227,14 +229,37 @@ class _BookManageListScreenState extends State<BookManageListScreen> {
   }
 }
 
-class _BookCard extends StatelessWidget {
+class _BookCard extends StatefulWidget {
   const _BookCard({required this.book, required this.onEdit});
 
   final BookModel book;
   final VoidCallback onEdit;
 
   @override
+  State<_BookCard> createState() => _BookCardState();
+}
+
+class _BookCardState extends State<_BookCard> {
+  final _bookService = BookService();
+  late Stream<List<BookVolumeModel>> _volumesStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _volumesStream = _bookService.watchBookVolumes(widget.book.id);
+  }
+
+  @override
+  void didUpdateWidget(covariant _BookCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.book.id != widget.book.id) {
+      _volumesStream = _bookService.watchBookVolumes(widget.book.id);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final book = widget.book;
     return Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
@@ -244,7 +269,7 @@ class _BookCard extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: onEdit,
+          onTap: widget.onEdit,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -288,6 +313,51 @@ class _BookCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontSize: 12),
+                    ),
+                    const SizedBox(height: 5),
+                    StreamBuilder<List<BookVolumeModel>>(
+                      stream: _volumesStream,
+                      builder: (context, snapshot) {
+                        if (snapshot.hasError) {
+                          return const Text(
+                            'โหลดสต็อกไม่สำเร็จ',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: Color(0xFFB3261E),
+                              fontSize: 12,
+                            ),
+                          );
+                        }
+                        if (!snapshot.hasData) {
+                          return const Text(
+                            'กำลังโหลดสต็อก…',
+                            style: TextStyle(
+                              color: Color(0xFF777777),
+                              fontSize: 12,
+                            ),
+                          );
+                        }
+
+                        final stock = snapshot.data!.fold<int>(
+                          0,
+                          (total, volume) => total + volume.stock,
+                        );
+                        return Text(
+                          stock > 0
+                              ? 'คงเหลือ $stock เล่ม'
+                              : 'หมดสต็อก',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: stock > 0
+                                ? const Color(0xFF39834A)
+                                : const Color(0xFFB3261E),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),

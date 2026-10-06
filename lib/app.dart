@@ -1,3 +1,4 @@
+// ประกอบ provider ธีม และเส้นทางหน้าจอของแอป
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -5,6 +6,7 @@ import 'core/constants/app_routes.dart';
 import 'core/theme/app_theme.dart';
 import 'models/book_model.dart';
 import 'providers/auth_provider.dart';
+import 'providers/book_provider.dart';
 import 'providers/cart_provider.dart';
 import 'screens/auth/edit_profile_screen.dart';
 import 'screens/auth/login_screen.dart';
@@ -31,6 +33,7 @@ class MainApp extends StatelessWidget {
 		return MultiProvider(
 			providers: [
 				ChangeNotifierProvider(create: (_) => AuthProvider()),
+				ChangeNotifierProvider(create: (_) => BookProvider()),
 				ChangeNotifierProvider(create: (_) => CartProvider()),
 			],
 			child: MaterialApp(
