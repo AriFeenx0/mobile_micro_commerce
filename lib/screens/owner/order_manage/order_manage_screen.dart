@@ -6,11 +6,17 @@ import '../../../models/order_model.dart';
 import '../../../models/user_model.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../services/order_service.dart';
-import '../../../widgets/navigation/owner_bottom_nav.dart';
 import '../../../widgets/order_list_content.dart';
 
-class OrderManageScreen extends StatelessWidget {
+class OrderManageScreen extends StatefulWidget {
   const OrderManageScreen({super.key});
+
+  @override
+  State<OrderManageScreen> createState() => _OrderManageScreenState();
+}
+
+class _OrderManageScreenState extends State<OrderManageScreen> {
+  final _orderService = OrderService();
 
   @override
   Widget build(BuildContext context) {
@@ -28,9 +34,26 @@ class OrderManageScreen extends StatelessWidget {
         }
         final ownerId = auth.profile!.id;
         return Scaffold(
-          appBar: AppBar(title: const Text('คำสั่งซื้อทั้งหมด')),
+          backgroundColor: Colors.white,
+          appBar: AppBar(
+            backgroundColor: Colors.white,
+            surfaceTintColor: Colors.transparent,
+            centerTitle: true,
+            leading: IconButton(
+              tooltip: 'กลับ Dashboard',
+              onPressed: () => Navigator.pushReplacementNamed(
+                context,
+                AppRoutes.ownerDashboard,
+              ),
+              icon: const Icon(Icons.arrow_back),
+            ),
+            title: const Text(
+              'จัดการออเดอร์',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ),
           body: StreamBuilder<List<OrderModel>>(
-            stream: OrderService().watchOrdersForOwner(ownerId),
+            stream: _orderService.watchOrdersForOwner(ownerId),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
@@ -41,22 +64,11 @@ class OrderManageScreen extends StatelessWidget {
               return OrderListContent(
                 orders: snapshot.data ?? const [],
                 ownerView: true,
+                onConfirmPayment: (order) =>
+                    _orderService.confirmPaymentAndDeductStock(order.id),
+                onRejectPayment: (order) =>
+                    _orderService.rejectPayment(order.id),
               );
-            },
-          ),
-          bottomNavigationBar: OwnerBottomNav(
-            selectedIndex: 2,
-            onDestinationSelected: (index) {
-              final route = switch (index) {
-                0 => AppRoutes.ownerDashboard,
-                1 => AppRoutes.ownerBooks,
-                3 => AppRoutes.chats,
-                4 => AppRoutes.profile,
-                _ => null,
-              };
-              if (route != null) {
-                Navigator.pushReplacementNamed(context, route);
-              }
             },
           ),
         );

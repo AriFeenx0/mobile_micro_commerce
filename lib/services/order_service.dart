@@ -15,6 +15,9 @@ class OrderService {
        _storageService = storageService ?? StorageService();
 
   static const String ordersCollection = 'orders';
+  static const String booksCollection = 'books';
+  static const String usersCollection = 'users';
+  static const String volumesCollection = 'volumes';
 
   final FirebaseFirestore _firestore;
   final FirebaseAuth _auth;
@@ -67,6 +70,130 @@ class OrderService {
     return order;
   }
 
+  Future<void> confirmPaymentAndDeductStock(String orderId) async {
+    final owner = await _requireShopOwner();
+    final orderReference = _orders.doc(orderId);
+
+    await _firestore.runTransaction((transaction) async {
+      final ownerProfileReference = _firestore
+          .collection(usersCollection)
+          .doc(owner.uid);
+      final ownerProfile = await transaction.get(ownerProfileReference);
+      if (ownerProfile.data()?['role'] != 'owner') {
+        throw StateError('บัญชีนี้ไม่มีสิทธิ์จัดการคำสั่งซื้อ');
+      }
+
+      final orderSnapshot = await transaction.get(orderReference);
+      final orderData = orderSnapshot.data();
+      if (!orderSnapshot.exists || orderData == null) {
+        throw StateError('ไม่พบคำสั่งซื้อ');
+      }
+      final order = OrderModel.fromJson(orderSnapshot.id, orderData);
+      if (order.ownerId != owner.uid) {
+        throw StateError('ไม่สามารถยืนยันคำสั่งซื้อของร้านอื่นได้');
+      }
+      if (order.status != OrderStatus.pendingSlipReview) {
+        throw StateError('คำสั่งซื้อนี้ไม่ได้อยู่ในสถานะรอตรวจสอบสลิป');
+      }
+      if (order.items.isEmpty) throw StateError('คำสั่งซื้อไม่มีรายการสินค้า');
+
+      final stockChanges = <String, _StockChange>{};
+      final bookReferences =
+          <String, DocumentReference<Map<String, dynamic>>>{};
+      for (final item in order.items) {
+        if (item.bookId.isEmpty || item.volumeId.isEmpty || item.qty < 1) {
+          throw StateError(
+            'ข้อมูลหนังสือหรือจำนวนสินค้าในคำสั่งซื้อไม่ถูกต้อง',
+          );
+        }
+        final bookReference = _firestore
+            .collection(booksCollection)
+            .doc(item.bookId);
+        final volumeReference = bookReference
+            .collection(volumesCollection)
+            .doc(item.volumeId);
+        bookReferences[item.bookId] = bookReference;
+
+        final existingChange = stockChanges[volumeReference.path];
+        stockChanges[volumeReference.path] = _StockChange(
+          reference: volumeReference,
+          quantity: (existingChange?.quantity ?? 0) + item.qty,
+        );
+      }
+
+      final bookSnapshots = <String, DocumentSnapshot<Map<String, dynamic>>>{};
+      for (final entry in bookReferences.entries) {
+        bookSnapshots[entry.key] = await transaction.get(entry.value);
+      }
+      for (final snapshot in bookSnapshots.values) {
+        if (!snapshot.exists || snapshot.data()?['ownerId'] != owner.uid) {
+          throw StateError('พบหนังสือที่ไม่ได้เป็นของร้านนี้');
+        }
+      }
+
+      final volumeSnapshots =
+          <String, DocumentSnapshot<Map<String, dynamic>>>{};
+      for (final entry in stockChanges.entries) {
+        volumeSnapshots[entry.key] = await transaction.get(
+          entry.value.reference,
+        );
+      }
+      for (final entry in stockChanges.entries) {
+        final snapshot = volumeSnapshots[entry.key]!;
+        final volumeData = snapshot.data();
+        if (!snapshot.exists || volumeData == null) {
+          throw StateError('ไม่พบเล่มหนังสือที่อยู่ในคำสั่งซื้อ');
+        }
+        final stock = (volumeData['stock'] as num?)?.toInt() ?? 0;
+        if (stock < entry.value.quantity) {
+          throw StateError('สต๊อกไม่เพียงพอสำหรับยืนยันการชำระเงิน');
+        }
+      }
+
+      for (final entry in stockChanges.entries) {
+        final volumeData = volumeSnapshots[entry.key]!.data()!;
+        final stock = (volumeData['stock'] as num?)?.toInt() ?? 0;
+        transaction.update(entry.value.reference, {
+          'stock': stock - entry.value.quantity,
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+      }
+      transaction.update(orderReference, {
+        'status': orderStatusToString(OrderStatus.paid),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    });
+  }
+
+  Future<void> rejectPayment(
+    String orderId, {
+    String reason = 'สลิปไม่ถูกต้อง',
+  }) async {
+    final owner = await _requireShopOwner();
+    final orderReference = _orders.doc(orderId);
+
+    await _firestore.runTransaction((transaction) async {
+      final orderSnapshot = await transaction.get(orderReference);
+      final orderData = orderSnapshot.data();
+      if (!orderSnapshot.exists || orderData == null) {
+        throw StateError('ไม่พบคำสั่งซื้อ');
+      }
+      final order = OrderModel.fromJson(orderSnapshot.id, orderData);
+      if (order.ownerId != owner.uid) {
+        throw StateError('ไม่สามารถแก้ไขคำสั่งซื้อของร้านอื่นได้');
+      }
+      if (order.status != OrderStatus.pendingSlipReview) {
+        throw StateError('คำสั่งซื้อนี้ไม่ได้อยู่ในสถานะรอตรวจสอบสลิป');
+      }
+
+      transaction.update(orderReference, {
+        'status': orderStatusToString(OrderStatus.cancelled),
+        'cancelReason': reason,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    });
+  }
+
   Stream<List<OrderModel>> watchOrdersForOwner(String ownerId) {
     return _orders
         .where('ownerId', isEqualTo: ownerId)
@@ -94,4 +221,24 @@ class OrderService {
     );
     return orders;
   }
+
+  Future<User> _requireShopOwner() async {
+    final owner = _auth.currentUser;
+    if (owner == null) throw StateError('กรุณาเข้าสู่ระบบก่อนจัดการคำสั่งซื้อ');
+    final profile = await _firestore
+        .collection(usersCollection)
+        .doc(owner.uid)
+        .get();
+    if (profile.data()?['role'] != 'owner') {
+      throw StateError('บัญชีนี้ไม่มีสิทธิ์จัดการคำสั่งซื้อ');
+    }
+    return owner;
+  }
+}
+
+class _StockChange {
+  const _StockChange({required this.reference, required this.quantity});
+
+  final DocumentReference<Map<String, dynamic>> reference;
+  final int quantity;
 }
