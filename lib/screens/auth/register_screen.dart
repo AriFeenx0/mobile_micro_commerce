@@ -95,8 +95,46 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       obscureText: true,
                       autofillHints: const [AutofillHints.newPassword],
                       textInputAction: TextInputAction.done,
-                      validator: _requiredValidator('กรุณากรอกรหัสผ่าน'),
+                      validator: (value) {
+                        final password = value ?? '';
+                        if (password.isEmpty) return 'กรุณากรอกรหัสผ่าน';
+                        if (password.length < 6) {
+                          return 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร';
+                        }
+                        if (!RegExp(r'[a-z]').hasMatch(password) ||
+                            !RegExp(r'[A-Z]').hasMatch(password)) {
+                          return 'รหัสผ่านต้องมีตัวอักษรอย่างน้อย 2 ตัว '
+                              '(ตัวพิมพ์เล็ก 1 ตัว และตัวพิมพ์ใหญ่ 1 ตัว)';
+                        }
+                        return null;
+                      },
                       onFieldSubmitted: (_) => _submit(),
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.only(left: 4, bottom: 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'กำหนดรหัสผ่านตามเงื่อนไขต่อไปนี้:',
+                            style: TextStyle(
+                              color: Color(0xFF777777),
+                              fontSize: 13,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            '• มีความยาวอย่างน้อย 6 ตัวอักษร\n'
+                            '• มีตัวพิมพ์เล็กอย่างน้อย 1 ตัว\n'
+                            '• มีตัวพิมพ์ใหญ่อย่างน้อย 1 ตัว',
+                            style: TextStyle(
+                              color: Color(0xFF777777),
+                              fontSize: 13,
+                              height: 1.5,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     _buildField(
                       label: 'Confirm Password',
