@@ -33,6 +33,15 @@ class _BookListScreenState extends State<BookListScreen> {
     );
   }
 
+  Future<void> _showFilterSheet() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const _BookFilterSheet(),
+    );
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -139,35 +148,86 @@ class _BookListScreenState extends State<BookListScreen> {
                         24,
                       ),
                       sliver: SliverToBoxAdapter(
-                        child: TextField(
-                          controller: _searchController,
-                          onChanged: booksProvider.setQuery,
-                          textInputAction: TextInputAction.search,
-                          decoration: InputDecoration(
-                            hintText: 'ค้นหา...',
-                            hintStyle: const TextStyle(
-                              color: Color(0xFFB8B8B8),
-                              fontSize: 16,
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 14,
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderSide: const BorderSide(
-                                color: Color(0xFF49413F),
-                                width: 1.5,
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: _searchController,
+                                onChanged: booksProvider.setQuery,
+                                textInputAction: TextInputAction.search,
+                                decoration: InputDecoration(
+                                  hintText: 'ค้นหาชื่อหนังสือ / ผู้เขียน...',
+                                  hintStyle: const TextStyle(
+                                    color: Color(0xFFB8B8B8),
+                                    fontSize: 16,
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 14,
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderSide: const BorderSide(
+                                      color: Color(0xFF49413F),
+                                      width: 1.5,
+                                    ),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderSide: const BorderSide(
+                                      color: Color(0xFF292929),
+                                      width: 1.5,
+                                    ),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
                               ),
-                              borderRadius: BorderRadius.circular(12),
                             ),
-                            focusedBorder: OutlineInputBorder(
-                              borderSide: const BorderSide(
-                                color: Color(0xFF292929),
-                                width: 1.5,
+                            const SizedBox(width: 8),
+                            SizedBox(
+                              width: 56,
+                              height: 54,
+                              child: OutlinedButton(
+                                onPressed: _showFilterSheet,
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: const Color(0xFF292929),
+                                  side: const BorderSide(
+                                    color: Color(0xFF49413F),
+                                    width: 1.5,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  padding: EdgeInsets.zero,
+                                ),
+                                child: Stack(
+                                  clipBehavior: Clip.none,
+                                  children: [
+                                    const Center(
+                                      child: Icon(Icons.tune, size: 23),
+                                    ),
+                                    if (booksProvider.activeFilterCount > 0)
+                                      Positioned(
+                                        right: -8,
+                                        top: -8,
+                                        child: CircleAvatar(
+                                          radius: 9,
+                                          backgroundColor: const Color(
+                                            0xFF292929,
+                                          ),
+                                          child: Text(
+                                            '${booksProvider.activeFilterCount}',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 10,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
                               ),
-                              borderRadius: BorderRadius.circular(12),
                             ),
-                          ),
+                          ],
                         ),
                       ),
                     ),
@@ -287,6 +347,269 @@ class _BookListScreenState extends State<BookListScreen> {
 
   void _goToLogin() {
     Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (_) => false);
+  }
+}
+
+class _BookFilterSheet extends StatefulWidget {
+  const _BookFilterSheet();
+
+  @override
+  State<_BookFilterSheet> createState() => _BookFilterSheetState();
+}
+
+class _BookFilterSheetState extends State<_BookFilterSheet> {
+  late BookFilters _filters;
+  late final TextEditingController _authorController;
+
+  @override
+  void initState() {
+    super.initState();
+    _filters = context.read<BookProvider>().appliedFilters;
+    _authorController = TextEditingController(text: _filters.author);
+  }
+
+  @override
+  void dispose() {
+    _authorController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<BookProvider>();
+    final categoryOptions = provider.categories;
+    final publisherOptions = provider.publishers;
+    final languageOptions = provider.languages;
+
+    return SafeArea(
+      top: false,
+      child: Container(
+        height: MediaQuery.of(context).size.height * 0.88,
+        padding: EdgeInsets.fromLTRB(
+          24,
+          12,
+          24,
+          MediaQuery.of(context).viewInsets.bottom + 16,
+        ),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              width: 44,
+              height: 5,
+              decoration: BoxDecoration(
+                color: const Color(0xFFD8D8D8),
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'ตัวกรอง',
+                    style: TextStyle(
+                      color: Color(0xFF292929),
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'ปิดตัวกรอง',
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close),
+                ),
+              ],
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(vertical: 18),
+                children: [
+                  _buildSectionLabel('หมวดหมู่'),
+                  const SizedBox(height: 10),
+                  _buildOptions(
+                    options: categoryOptions,
+                    selected: _filters.category,
+                    onSelected: (value) {
+                      setState(() {
+                        _filters = _filters.copyWith(category: value);
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 22),
+                  _buildSectionLabel('ผู้เขียน'),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: _authorController,
+                    onChanged: (value) {
+                      setState(() {
+                        _filters = _filters.copyWith(author: value);
+                      });
+                    },
+                    decoration: _inputDecoration('พิมพ์ชื่อผู้เขียน'),
+                  ),
+                  const SizedBox(height: 22),
+                  _buildSectionLabel('สำนักพิมพ์'),
+                  const SizedBox(height: 10),
+                  if (publisherOptions.isEmpty)
+                    const Text(
+                      'ยังไม่มีข้อมูลสำนักพิมพ์',
+                      style: TextStyle(color: Color(0xFF777777)),
+                    )
+                  else
+                    _buildOptions(
+                      options: ['ทั้งหมด', ...publisherOptions],
+                      selected: _filters.publisher.isEmpty
+                          ? 'ทั้งหมด'
+                          : _filters.publisher,
+                      onSelected: (value) {
+                        setState(() {
+                          _filters = _filters.copyWith(
+                            publisher: value == 'ทั้งหมด' ? '' : value,
+                          );
+                        });
+                      },
+                    ),
+                  const SizedBox(height: 22),
+                  _buildSectionLabel('ภาษา'),
+                  const SizedBox(height: 10),
+                  _buildOptions(
+                    options: ['ทั้งหมด', ...languageOptions],
+                    selected: _filters.language.isEmpty
+                        ? 'ทั้งหมด'
+                        : _filters.language,
+                    onSelected: (value) {
+                      setState(() {
+                        _filters = _filters.copyWith(
+                          language: value == 'ทั้งหมด' ? '' : value,
+                        );
+                      });
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _clearFilters,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF292929),
+                      minimumSize: const Size.fromHeight(54),
+                      side: const BorderSide(color: Color(0xFF999999)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: const Text('ล้างตัวกรอง'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: _applyFilters,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF292929),
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size.fromHeight(54),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: const Text('แสดงผล'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionLabel(String label) {
+    return Text(
+      label,
+      style: const TextStyle(
+        color: Color(0xFF777777),
+        fontSize: 15,
+        fontWeight: FontWeight.w500,
+      ),
+    );
+  }
+
+  Widget _buildOptions({
+    required List<String> options,
+    required String selected,
+    required ValueChanged<String> onSelected,
+  }) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (final option in options)
+          ChoiceChip(
+            label: Text(option),
+            selected: option == selected,
+            onSelected: (_) => onSelected(option),
+            showCheckmark: false,
+            labelStyle: TextStyle(
+              color: option == selected
+                  ? Colors.white
+                  : const Color(0xFF292929),
+              fontSize: 14,
+            ),
+            backgroundColor: Colors.white,
+            selectedColor: const Color(0xFF292929),
+            side: BorderSide(
+              color: option == selected
+                  ? const Color(0xFF292929)
+                  : const Color(0xFFCCCCCC),
+            ),
+            shape: const StadiumBorder(),
+          ),
+      ],
+    );
+  }
+
+  InputDecoration _inputDecoration(String hint) {
+    return InputDecoration(
+      hintText: hint,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      enabledBorder: OutlineInputBorder(
+        borderSide: const BorderSide(color: Color(0xFF999999), width: 1.5),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderSide: const BorderSide(color: Color(0xFF292929), width: 1.5),
+        borderRadius: BorderRadius.circular(12),
+      ),
+    );
+  }
+
+  void _clearFilters() {
+    setState(() {
+      _filters = BookFilters(
+        query: context.read<BookProvider>().appliedFilters.query,
+      );
+      _authorController.clear();
+    });
+  }
+
+  void _applyFilters() {
+    final provider = context.read<BookProvider>();
+    provider.updateDraftFilters(
+      _filters.copyWith(query: provider.appliedFilters.query),
+    );
+    provider.applyFilters();
+    Navigator.pop(context);
   }
 }
 

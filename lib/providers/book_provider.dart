@@ -84,12 +84,33 @@ class BookProvider extends ChangeNotifier {
     return ['ทั้งหมด', ...values];
   }
 
+  List<String> get publishers => _sortedValues(_books.map((book) => book.publisher));
+
+  List<String> get languages => _sortedValues(_books.map((book) => book.language));
+
+  int get activeFilterCount {
+    var count = 0;
+    if (_appliedFilters.category != 'ทั้งหมด') count++;
+    if (_appliedFilters.author.trim().isNotEmpty) count++;
+    if (_appliedFilters.publisher.isNotEmpty) count++;
+    if (_appliedFilters.language.isNotEmpty) count++;
+    return count;
+  }
+
   List<BookModel> get visibleBooks {
     final query = _appliedFilters.query.trim().toLowerCase();
     final category = _appliedFilters.category;
     return _books.where((book) {
       final matchesCategory =
           category == 'ทั้งหมด' || book.category.contains(category);
+      final author = _appliedFilters.author.trim().toLowerCase();
+      final matchesAuthor =
+          author.isEmpty || book.author.toLowerCase().contains(author);
+      final publisher = _appliedFilters.publisher;
+      final matchesPublisher =
+          publisher.isEmpty || book.publisher == publisher;
+      final language = _appliedFilters.language;
+      final matchesLanguage = language.isEmpty || book.language == language;
       final matchesQuery =
           query.isEmpty ||
           [
@@ -99,7 +120,11 @@ class BookProvider extends ChangeNotifier {
             book.description,
             ...book.category,
           ].any((value) => value.toLowerCase().contains(query));
-      return matchesCategory && matchesQuery;
+      return matchesCategory &&
+          matchesAuthor &&
+          matchesPublisher &&
+          matchesLanguage &&
+          matchesQuery;
     }).toList();
   }
 
@@ -160,10 +185,8 @@ class BookProvider extends ChangeNotifier {
         _books = books;
         _isLoading = false;
         _error = null;
-        if (!_categoriesContain(_draftFilters.category)) {
-          _draftFilters = _draftFilters.copyWith(category: 'ทั้งหมด');
-          _appliedFilters = _appliedFilters.copyWith(category: 'ทั้งหมด');
-        }
+        _draftFilters = _normalizeFilters(_draftFilters);
+        _appliedFilters = _normalizeFilters(_appliedFilters);
         notifyListeners();
       },
       onError: (Object error) {
@@ -177,6 +200,28 @@ class BookProvider extends ChangeNotifier {
   bool _categoriesContain(String category) =>
       category == 'ทั้งหมด' ||
       _books.any((book) => book.category.contains(category));
+
+  BookFilters _normalizeFilters(BookFilters filters) {
+    return filters.copyWith(
+      category: _categoriesContain(filters.category) ? filters.category : 'ทั้งหมด',
+      publisher:
+          filters.publisher.isEmpty ||
+              _books.any((book) => book.publisher == filters.publisher)
+          ? filters.publisher
+          : '',
+      language:
+          filters.language.isEmpty ||
+              _books.any((book) => book.language == filters.language)
+          ? filters.language
+          : '',
+    );
+  }
+
+  List<String> _sortedValues(Iterable<String> values) {
+    final sorted = values.where((value) => value.trim().isNotEmpty).toSet().toList()
+      ..sort();
+    return sorted;
+  }
 
   @override
   void dispose() {
