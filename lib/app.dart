@@ -1,4 +1,4 @@
-// ประกอบ provider ธีม และเส้นทางหน้าจอของแอป
+﻿// ประกอบ provider ธีม และเส้นทางหน้าจอของแอป
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -12,7 +12,6 @@ import 'screens/auth/edit_profile_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/chat/chat_list_screen.dart';
-import 'screens/chat/chat_room_screen.dart';
 import 'screens/customer/book_detail/book_detail_screen.dart';
 import 'screens/customer/book_list/book_list_screen.dart';
 import 'screens/customer/cart/cart_screen.dart';
@@ -62,7 +61,6 @@ class MainApp extends StatelessWidget {
 				AppRoutes.ownerOrders: (_) => const OrderManageScreen(),
 				AppRoutes.ownerCoupons: (_) => const CouponManageScreen(),
 				AppRoutes.chats: (_) => const ChatListScreen(),
-				AppRoutes.chatRoom: (_) => const ChatRoomScreen(),
 				AppRoutes.profile: (_) => const ProfileScreen(),
 			},
 			),

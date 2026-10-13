@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/constants/app_routes.dart';
+import '../../../models/chat_message_model.dart';
 import '../../../models/order_model.dart';
 import '../../../models/user_model.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../services/auth_service.dart';
+import '../../../services/chat_service.dart';
 import '../../../services/order_service.dart';
 import '../../../widgets/navigation/owner_bottom_nav.dart';
 
@@ -142,25 +144,7 @@ class DashboardScreen extends StatelessWidget {
                                       ),
                                     ),
                                 const SizedBox(height: 16),
-                                const _SectionHeading(
-                                  'ข้อความใหม่จากลูกค้า (2)',
-                                ),
-                                _DashboardRow(
-                                  title: 'ปลาม: เล่ม 2 สภาพเป็นยังไงคะ?',
-                                  unread: true,
-                                  onTap: () => Navigator.pushNamed(
-                                    context,
-                                    AppRoutes.chats,
-                                  ),
-                                ),
-                                _DashboardRow(
-                                  title: 'ต้น: มีเล่ม 3 เข้าเมื่อไหร่คะ?',
-                                  unread: true,
-                                  onTap: () => Navigator.pushNamed(
-                                    context,
-                                    AppRoutes.chats,
-                                  ),
-                                ),
+                                _UnreadMessagesSection(ownerId: owner.id),
                               ],
                             ),
                           );
@@ -243,6 +227,94 @@ class _RecentOrderRowState extends State<_RecentOrderRow> {
           title: '$displayName · $items',
           trailing: orderStatusToString(widget.order.status),
           onTap: widget.onTap,
+        );
+      },
+    );
+  }
+}
+
+class _UnreadMessagesSection extends StatefulWidget {
+  const _UnreadMessagesSection({required this.ownerId});
+
+  final String ownerId;
+
+  @override
+  State<_UnreadMessagesSection> createState() => _UnreadMessagesSectionState();
+}
+
+class _UnreadMessagesSectionState extends State<_UnreadMessagesSection> {
+  late final Stream<List<ChatRoomModel>> _rooms = ChatService()
+      .watchRoomsForUser(widget.ownerId);
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<List<ChatRoomModel>>(
+      stream: _rooms,
+      builder: (context, snapshot) {
+        final unreadRooms =
+            (snapshot.data ?? const <ChatRoomModel>[])
+                .where((room) => (room.unreadCount[widget.ownerId] ?? 0) > 0)
+                .toList()
+              ..sort(
+                (a, b) => (b.lastMessageAt ?? DateTime(0)).compareTo(
+                  a.lastMessageAt ?? DateTime(0),
+                ),
+              );
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _SectionHeading('ข้อความใหม่จากลูกค้า (${unreadRooms.length})'),
+            if (snapshot.hasError)
+              const _DashboardRow(title: 'โหลดข้อความไม่สำเร็จ')
+            else if (unreadRooms.isEmpty)
+              const _DashboardRow(title: 'ไม่มีข้อความใหม่')
+            else
+              for (final room in unreadRooms.take(2))
+                _UnreadMessageRow(
+                  key: ValueKey(room.id),
+                  room: room,
+                  ownerId: widget.ownerId,
+                ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _UnreadMessageRow extends StatefulWidget {
+  const _UnreadMessageRow({
+    super.key,
+    required this.room,
+    required this.ownerId,
+  });
+
+  final ChatRoomModel room;
+  final String ownerId;
+
+  @override
+  State<_UnreadMessageRow> createState() => _UnreadMessageRowState();
+}
+
+class _UnreadMessageRowState extends State<_UnreadMessageRow> {
+  late final Future<UserModel?> _customer = AuthService().getUserProfile(
+    widget.room.participants.firstWhere(
+      (id) => id != widget.ownerId,
+      orElse: () => '',
+    ),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<UserModel?>(
+      future: _customer,
+      builder: (context, snapshot) {
+        final name = snapshot.data?.name.trim();
+        final displayName = name == null || name.isEmpty ? 'ลูกค้า' : name;
+        return _DashboardRow(
+          title: '$displayName: ${widget.room.lastMessage}',
+          unread: true,
+          onTap: () => Navigator.pushNamed(context, AppRoutes.chats),
         );
       },
     );
