@@ -70,21 +70,27 @@ class ChatService {
     required String ownerId,
     required String senderId,
     required String text,
+    String? imageUrl,
   }) async {
+    final trimmedText = text.trim();
+    if (trimmedText.isEmpty && (imageUrl == null || imageUrl.isEmpty)) {
+      throw ArgumentError('ข้อความต้องมีข้อความหรือรูปภาพ');
+    }
+
     final roomId = ChatRoomModel.buildRoomId(customerId, ownerId);
     final receiverId = senderId == customerId ? ownerId : customerId;
     final roomRef = _rooms.doc(roomId);
     final batch = _firestore.batch();
     batch.set(roomRef, {
       'participants': [customerId, ownerId],
-      'lastMessage': text,
+      'lastMessage': trimmedText.isNotEmpty ? trimmedText : 'ส่งรูปภาพ',
       'lastMessageAt': FieldValue.serverTimestamp(),
       'unreadCount': {receiverId: FieldValue.increment(1)},
     }, SetOptions(merge: true));
     batch.set(roomRef.collection(messagesCollection).doc(), {
       'senderId': senderId,
-      'text': text,
-      'imageUrl': null,
+      'text': trimmedText.isNotEmpty ? trimmedText : null,
+      'imageUrl': imageUrl,
       'readBy': [senderId],
       'createdAt': FieldValue.serverTimestamp(),
     });
@@ -101,4 +107,3 @@ class ChatService {
     }, SetOptions(merge: true));
   }
 }
-

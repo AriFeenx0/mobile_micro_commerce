@@ -1,8 +1,12 @@
 ﻿// หน้าห้องแชทระหว่างลูกค้ากับเจ้าของร้าน
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../models/chat_message_model.dart';
 import '../../services/chat_service.dart';
+import '../../services/storage_service.dart';
 
 class ChatRoomScreen extends StatefulWidget {
   const ChatRoomScreen({
@@ -30,9 +34,14 @@ class ChatRoomScreen extends StatefulWidget {
 
 class _ChatRoomScreenState extends State<ChatRoomScreen> {
   final _service = ChatService();
+  final _storageService = StorageService();
+  final _imagePicker = ImagePicker();
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
   late final Stream<List<ChatMessageModel>> _messages;
+  XFile? _selectedImage;
+  Uint8List? _selectedImageBytes;
+  bool _pickingImage = false;
   bool _sending = false;
   int _lastCount = 0;
 
@@ -64,24 +73,72 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
   Future<void> _send() async {
     final text = _controller.text.trim();
-    if (text.isEmpty || _sending) return;
+    final image = _selectedImage;
+    if ((text.isEmpty && image == null) || _sending) return;
     setState(() => _sending = true);
     try {
+      final imageUrl = image == null
+          ? null
+          : await _storageService.uploadChatImage(
+              customerId: widget.customerId,
+              ownerId: widget.ownerId,
+              senderId: widget.currentUserId,
+              image: image,
+            );
       await _service.sendMessage(
         customerId: widget.customerId,
         ownerId: widget.ownerId,
         senderId: widget.currentUserId,
         text: text,
+        imageUrl: imageUrl,
       );
       _controller.clear();
-    } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('ส่งข้อความไม่สำเร็จ')));
+        setState(() {
+          _selectedImage = null;
+          _selectedImageBytes = null;
+        });
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              image == null
+                  ? 'ส่งข้อความไม่สำเร็จ: $error'
+                  : 'ส่งรูปภาพไม่สำเร็จ: $error',
+            ),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _sending = false);
+    }
+  }
+
+  Future<void> _pickImage() async {
+    if (_pickingImage || _sending) return;
+    setState(() => _pickingImage = true);
+    try {
+      final image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+      );
+      if (image == null) return;
+      final bytes = await image.readAsBytes();
+      if (!mounted) return;
+      setState(() {
+        _selectedImage = image;
+        _selectedImageBytes = bytes;
+      });
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('เลือกรูปภาพไม่สำเร็จ: $error')));
+      }
+    } finally {
+      if (mounted) setState(() => _pickingImage = false);
     }
   }
 
@@ -178,6 +235,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                     final message = messages[index];
                     return _MessageBubble(
                       text: message.text ?? '',
+                      imageUrl: message.imageUrl,
                       isMine: message.senderId == widget.currentUserId,
                     );
                   },
@@ -188,39 +246,97 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           const Divider(height: 1),
           SafeArea(
             top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _controller,
-                      minLines: 1,
-                      maxLines: 4,
-                      textInputAction: TextInputAction.send,
-                      onSubmitted: (_) => _send(),
-                      decoration: InputDecoration(
-                        hintText: 'พิมพ์ข้อความ...',
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 12,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (_selectedImageBytes != null)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                    child: Row(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.memory(
+                            _selectedImageBytes!,
+                            width: 64,
+                            height: 64,
+                            fit: BoxFit.cover,
+                          ),
                         ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(28),
+                        const SizedBox(width: 8),
+                        const Expanded(child: Text('พร้อมส่งรูปภาพ')),
+                        IconButton(
+                          tooltip: 'นำรูปภาพออก',
+                          onPressed: _sending
+                              ? null
+                              : () => setState(() {
+                                  _selectedImage = null;
+                                  _selectedImageBytes = null;
+                                }),
+                          icon: const Icon(Icons.close),
+                        ),
+                      ],
+                    ),
+                  ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 8, 16, 8),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        tooltip: 'เลือกรูปภาพ',
+                        onPressed: _pickingImage || _sending
+                            ? null
+                            : _pickImage,
+                        icon: _pickingImage
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.image_outlined),
+                      ),
+                      Expanded(
+                        child: TextField(
+                          controller: _controller,
+                          minLines: 1,
+                          maxLines: 4,
+                          textInputAction: TextInputAction.send,
+                          onSubmitted: (_) => _send(),
+                          decoration: InputDecoration(
+                            hintText: 'พิมพ์ข้อความ...',
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 12,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(28),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                      const SizedBox(width: 12),
+                      IconButton.filled(
+                        style: IconButton.styleFrom(
+                          backgroundColor: const Color(0xFF333333),
+                        ),
+                        onPressed: _sending ? null : _send,
+                        icon: _sending
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.send),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                  IconButton.filled(
-                    style: IconButton.styleFrom(
-                      backgroundColor: const Color(0xFF333333),
-                    ),
-                    onPressed: _sending ? null : _send,
-                    icon: const Icon(Icons.send),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ],
@@ -231,31 +347,66 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 }
 
 class _MessageBubble extends StatelessWidget {
-  const _MessageBubble({required this.text, required this.isMine});
+  const _MessageBubble({
+    required this.text,
+    required this.imageUrl,
+    required this.isMine,
+  });
 
   final String text;
+  final String? imageUrl;
   final bool isMine;
 
   @override
   Widget build(BuildContext context) {
+    final imageSize = MediaQuery.sizeOf(context).width * 0.6;
     return Align(
       alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 6),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        padding: const EdgeInsets.all(8),
         constraints: BoxConstraints(
           maxWidth: MediaQuery.sizeOf(context).width * 0.7,
         ),
         decoration: BoxDecoration(
           color: isMine ? const Color(0xFF333333) : const Color(0xFFEFEFEF),
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(18),
         ),
-        child: Text(
-          text,
-          style: TextStyle(
-            fontSize: 16,
-            color: isMine ? Colors.white : const Color(0xFF292929),
-          ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (imageUrl != null && imageUrl!.isNotEmpty)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.network(
+                  imageUrl!,
+                  width: imageSize,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) => SizedBox(
+                    width: imageSize,
+                    height: 100,
+                    child: const Center(
+                      child: Icon(Icons.broken_image_outlined),
+                    ),
+                  ),
+                ),
+              ),
+            if (text.isNotEmpty) ...[
+              if (imageUrl != null && imageUrl!.isNotEmpty)
+                const SizedBox(height: 6),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                child: Text(
+                  text,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: isMine ? Colors.white : const Color(0xFF292929),
+                  ),
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );
