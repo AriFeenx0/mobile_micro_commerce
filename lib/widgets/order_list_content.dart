@@ -5,6 +5,7 @@ import '../models/order_model.dart';
 import '../screens/customer/checkout/slip_upload_screen.dart';
 
 class OrderListContent extends StatefulWidget {
+  // รับรายการออเดอร์ รูปแบบการแสดงผล และ callback สำหรับจัดการการชำระเงิน
   const OrderListContent({
     super.key,
     required this.orders,
@@ -13,24 +14,31 @@ class OrderListContent extends StatefulWidget {
     this.onRejectPayment,
   });
 
+  // รายการออเดอร์ที่ต้องแสดง และกำหนดว่าเป็นมุมมองเจ้าของร้านหรือไม่
   final List<OrderModel> orders;
   final bool ownerView;
+
+  // callback ที่หน้าจอภายนอกใช้ยืนยันหรือปฏิเสธสลิปของออเดอร์
   final Future<void> Function(OrderModel order)? onConfirmPayment;
   final Future<void> Function(OrderModel order)? onRejectPayment;
 
+  // สร้าง state สำหรับจำตัวกรองสถานะที่ผู้ใช้เลือก
   @override
   State<OrderListContent> createState() => _OrderListContentState();
 }
 
 class _OrderListContentState extends State<OrderListContent> {
+  // null หมายถึงแสดงทุกสถานะ
   OrderStatus? _selectedStatus;
 
   @override
   Widget build(BuildContext context) {
+    // กรองออเดอร์ตามสถานะที่เลือก ก่อนนำไปแสดงในรายการ
     final orders = widget.orders.where((order) {
       return _selectedStatus == null || order.status == _selectedStatus;
     }).toList();
 
+    // แสดงตัวกรองเฉพาะเจ้าของร้าน และแสดงข้อความเมื่อไม่มีออเดอร์ที่ตรงเงื่อนไข
     return Column(
       children: [
         if (widget.ownerView) _buildFilters(),
@@ -60,6 +68,7 @@ class _OrderListContentState extends State<OrderListContent> {
     );
   }
 
+  // สร้างชิปตัวกรองสถานะ พร้อมจำนวนออเดอร์ที่รอตรวจสลิป
   Widget _buildFilters() {
     final pendingCount = widget.orders
         .where((order) => order.status == OrderStatus.pendingSlipReview)
@@ -81,6 +90,7 @@ class _OrderListContentState extends State<OrderListContent> {
         itemBuilder: (context, index) {
           final (label, status) = filters[index];
           final selected = _selectedStatus == status;
+          // เปลี่ยนสถานะตัวกรองเมื่อผู้ใช้เลือกชิป
           return ChoiceChip(
             label: Text(label),
             selected: selected,
@@ -106,7 +116,9 @@ class _OrderListContentState extends State<OrderListContent> {
   }
 }
 
+// การ์ดข้อมูลออเดอร์หนึ่งรายการ พร้อมข้อมูลและปุ่มตามบทบาทผู้ใช้งาน
 class _OrderCard extends StatefulWidget {
+  // รับออเดอร์ รูปแบบมุมมอง และ callback สำหรับการตรวจสอบการชำระเงิน
   const _OrderCard({
     required this.order,
     required this.ownerView,
@@ -114,18 +126,22 @@ class _OrderCard extends StatefulWidget {
     this.onRejectPayment,
   });
 
+  // ข้อมูลออเดอร์และการตั้งค่าการทำงานของการ์ด
   final OrderModel order;
   final bool ownerView;
   final Future<void> Function(OrderModel order)? onConfirmPayment;
   final Future<void> Function(OrderModel order)? onRejectPayment;
 
+  // ใช้ state ภายในจัดการสถานะกำลังดำเนินการของปุ่ม
   @override
   State<_OrderCard> createState() => _OrderCardState();
 }
 
 class _OrderCardState extends State<_OrderCard> {
+  // ป้องกันการกดปุ่มยืนยันหรือปฏิเสธซ้ำระหว่างรอ callback
   bool _isProcessing = false;
 
+  // เลือกสีเส้นขอบของการ์ดให้สอดคล้องกับสถานะออเดอร์
   Color _statusBorderColor(OrderStatus status) => switch (status) {
     OrderStatus.pendingPayment ||
     OrderStatus.pendingSlipReview => const Color(0xFFE9BE58),
@@ -134,6 +150,7 @@ class _OrderCardState extends State<_OrderCard> {
     OrderStatus.cancelled => const Color(0xFFDDDDDD),
   };
 
+  // แสดงรหัสท้าย 4 ตัวเพื่อให้อ่านง่ายและไม่แสดงรหัสเต็ม
   String _shortId(String id) {
     final normalized = id.toUpperCase();
     return normalized.length <= 4
@@ -141,6 +158,7 @@ class _OrderCardState extends State<_OrderCard> {
         : normalized.substring(normalized.length - 4);
   }
 
+  // จัดรูปแบบราคาเป็นเงินบาท โดยไม่แสดงทศนิยมเมื่อเป็นจำนวนเต็ม
   String _formatPrice(double price) {
     final amount = price % 1 == 0
         ? price.toStringAsFixed(0)
@@ -151,11 +169,13 @@ class _OrderCardState extends State<_OrderCard> {
   @override
   Widget build(BuildContext context) {
     final order = widget.order;
+    // ตรวจว่าสลิปรอการตรวจสอบ และการจองสินค้าหมดเวลาแล้วหรือยัง
     final isReviewing = order.status == OrderStatus.pendingSlipReview;
     final reservationExpired =
         order.status == OrderStatus.pendingPayment &&
         order.lockExpiresAt != null &&
         !order.lockExpiresAt!.isAfter(DateTime.now());
+    // เนื้อหาการ์ดประกอบด้วยหัวข้อ สถานะ รายการสินค้า ยอดชำระ และปุ่มตามเงื่อนไข
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -192,6 +212,7 @@ class _OrderCardState extends State<_OrderCard> {
             ],
           ),
           const SizedBox(height: 10),
+          // แสดงชื่อสินค้า จำนวนเล่ม และจำนวนชิ้นในออเดอร์
           for (final item in order.items)
             Padding(
               padding: const EdgeInsets.only(bottom: 5),
@@ -203,6 +224,7 @@ class _OrderCardState extends State<_OrderCard> {
               ),
             ),
           Row(
+            // แสดงยอดชำระและช่องทางชำระเงินในแถวเดียวกัน
             children: [
               const Text('ยอดชำระ', style: TextStyle(color: Color(0xFF666666))),
               const SizedBox(width: 6),
@@ -223,6 +245,7 @@ class _OrderCardState extends State<_OrderCard> {
               ),
             ],
           ),
+          // แสดงที่อยู่จัดส่งในมุมมองเจ้าของร้านเท่านั้น
           if (widget.ownerView) ...[
             const SizedBox(height: 8),
             Text(
@@ -232,6 +255,7 @@ class _OrderCardState extends State<_OrderCard> {
               style: const TextStyle(color: Color(0xFF777777), fontSize: 12),
             ),
           ],
+          // เจ้าของร้านดูรูปสลิปขนาดย่อหรือข้อความเมื่อไม่มีรูปแนบ
           if (widget.ownerView && isReviewing) ...[
             const SizedBox(height: 12),
             if (order.slipImageUrl?.isNotEmpty == true)
@@ -279,6 +303,7 @@ class _OrderCardState extends State<_OrderCard> {
                 ],
               ),
           ],
+          // แสดงปุ่มยืนยันและปฏิเสธเมื่อเจ้าของร้านกำลังตรวจสลิป
           if (widget.ownerView && isReviewing) ...[
             const SizedBox(height: 12),
             Row(
@@ -321,6 +346,7 @@ class _OrderCardState extends State<_OrderCard> {
                 ),
               ],
             ),
+            // ลูกค้าส่งสลิปได้เมื่อยังรอชำระและเวลาจองยังไม่หมด
           ] else if (!widget.ownerView &&
               order.status == OrderStatus.pendingPayment &&
               !reservationExpired) ...[
@@ -353,6 +379,7 @@ class _OrderCardState extends State<_OrderCard> {
     );
   }
 
+  // ขอคำยืนยันจากเจ้าของร้านก่อนเรียก callback เพื่อบันทึกการชำระและตัดสต็อก
   Future<void> _confirmPayment() async {
     final callback = widget.onConfirmPayment;
     if (callback == null) return;
@@ -379,6 +406,7 @@ class _OrderCardState extends State<_OrderCard> {
     await _runAction(callback, successMessage: 'ยืนยันชำระเงินและตัดสต็อกแล้ว');
   }
 
+  // ขอคำยืนยันก่อนปฏิเสธสลิป ซึ่งจะยกเลิกออเดอร์ตามข้อความแจ้งเตือน
   Future<void> _rejectPayment() async {
     final callback = widget.onRejectPayment;
     if (callback == null) return;
@@ -403,6 +431,7 @@ class _OrderCardState extends State<_OrderCard> {
     await _runAction(callback, successMessage: 'ปฏิเสธสลิปแล้ว');
   }
 
+  // เรียกงานยืนยัน/ปฏิเสธ แสดงผลสำเร็จหรือข้อผิดพลาด และคืนสถานะปุ่ม
   Future<void> _runAction(
     Future<void> Function(OrderModel order) action, {
     required String successMessage,
@@ -418,6 +447,7 @@ class _OrderCardState extends State<_OrderCard> {
     }
   }
 
+  // เปิดรูปสลิปในหน้าต่างขยายที่ซูมและเลื่อนได้
   Future<void> _showSlip(String imageUrl) async {
     await showDialog<void>(
       context: context,
@@ -450,28 +480,30 @@ class _OrderCardState extends State<_OrderCard> {
     );
   }
 
+  // แสดงข้อความแจ้งผลการทำงานด้านล่างหน้าจอ
   void _showMessage(String message) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(message)));
   }
 
+  // ใช้ข้อความจาก StateError หากมี มิฉะนั้นแสดงรายละเอียดข้อผิดพลาด
   String _actionErrorMessage(Object error) => error is StateError
       ? error.message.toString()
       : 'ดำเนินการไม่สำเร็จ: $error';
 }
 
+// ป้ายสถานะออเดอร์ที่เลือกข้อความและสีตามสถานะ หรือแจ้งว่าหมดเวลาจอง
 class _StatusBadge extends StatelessWidget {
-  const _StatusBadge({
-    required this.status,
-    this.reservationExpired = false,
-  });
+  const _StatusBadge({required this.status, this.reservationExpired = false});
 
+  // สถานะออเดอร์และ flag สำหรับกรณีการจองหมดเวลา
   final OrderStatus status;
   final bool reservationExpired;
 
   @override
   Widget build(BuildContext context) {
+    // สถานะหมดเวลาจองมีรูปแบบเฉพาะ และแสดงแทนป้ายสถานะปกติ
     if (reservationExpired) {
       return Container(
         constraints: const BoxConstraints(minWidth: 84),
@@ -488,6 +520,7 @@ class _StatusBadge extends StatelessWidget {
         ),
       );
     }
+    // กำหนดข้อความ สีตัวอักษร และสีพื้นหลังของแต่ละสถานะ
     final (label, color, background) = switch (status) {
       OrderStatus.pendingPayment => (
         'รอชำระ',
@@ -532,11 +565,13 @@ class _StatusBadge extends StatelessWidget {
   }
 }
 
+// กล่องภาพสำรองที่ใช้เมื่อไม่มีรูปสลิปหรือโหลดภาพไม่สำเร็จ
 class _SlipPlaceholder extends StatelessWidget {
   const _SlipPlaceholder();
 
   @override
   Widget build(BuildContext context) {
+    // กล่องขนาดเดียวกับภาพสลิป เพื่อรักษาการจัดวางของแถว
     return Container(
       width: 72,
       height: 72,
