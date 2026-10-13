@@ -1,9 +1,12 @@
 // รวบรวมที่อยู่และสรุปยอดก่อนเลือกวิธีชำระเงิน
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../models/order_model.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/cart_provider.dart';
+import '../../../services/order_service.dart';
 import 'slip_upload_screen.dart';
 
 enum _PaymentMethod { promptPay, bankTransfer }
@@ -18,8 +21,10 @@ class CheckoutScreen extends StatefulWidget {
 class _CheckoutScreenState extends State<CheckoutScreen> {
   static const double _shippingFee = 20;
   final _addressController = TextEditingController();
+  final _orderService = OrderService();
   String? _addressProfileId;
   _PaymentMethod _paymentMethod = _PaymentMethod.promptPay;
+  bool _isReserving = false;
 
   @override
   void didChangeDependencies() {
@@ -192,28 +197,26 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                               child: FilledButton(
                                 onPressed:
                                     _paymentMethod ==
-                                        _PaymentMethod.bankTransfer
-                                    ? () => Navigator.push<void>(
-                                        context,
-                                        MaterialPageRoute<void>(
-                                          builder: (_) => SlipUploadScreen(
-                                            amount: total,
-                                            shippingAddress: _addressController
-                                                .text
-                                                .trim(),
-                                            shippingFee: _shippingFee,
-                                          ),
-                                        ),
-                                      )
+                                            _PaymentMethod.bankTransfer &&
+                                        !_isReserving
+                                    ? () => _startCheckout(cart)
                                     : null,
                                 style: FilledButton.styleFrom(
                                   backgroundColor: const Color(0xFF333333),
                                   foregroundColor: Colors.white,
                                 ),
-                                child: const Text(
-                                  'ยืนยันการสั่งสินค้า',
-                                  style: TextStyle(fontSize: 17),
-                                ),
+                                child: _isReserving
+                                    ? const SizedBox.square(
+                                        dimension: 22,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : const Text(
+                                        'ยืนยันการสั่งสินค้า',
+                                        style: TextStyle(fontSize: 17),
+                                      ),
                               ),
                             ),
                           ],
@@ -225,6 +228,74 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         );
       },
     );
+  }
+
+  Future<void> _startCheckout(CartProvider cart) async {
+    final address = _addressController.text.trim();
+    if (address.isEmpty) {
+      _showMessage('กรุณากรอกที่อยู่จัดส่ง');
+      return;
+    }
+    if (cart.items.isEmpty) {
+      _showMessage('ไม่มีสินค้าในตะกร้า');
+      return;
+    }
+    final ownerIds = cart.items.map((item) => item.book.ownerId).toSet();
+    if (ownerIds.length != 1 || ownerIds.single.isEmpty) {
+      _showMessage('คำสั่งซื้อนี้ต้องเป็นสินค้าจากร้านเดียว');
+      return;
+    }
+
+    setState(() => _isReserving = true);
+    try {
+      final order = await _orderService.reserveOrder(
+        ownerId: ownerIds.single,
+        items: cart.items
+            .map(
+              (item) => OrderItem(
+                bookId: item.book.id,
+                volumeId: item.volume.id,
+                title: item.book.title,
+                volumeNumber: item.volume.volumeNumber,
+                price: item.volume.price,
+                qty: item.quantity,
+              ),
+            )
+            .toList(),
+        shippingAddress: address,
+        shippingFee: _shippingFee,
+      );
+      if (!mounted) return;
+      await Navigator.push<void>(
+        context,
+        MaterialPageRoute<void>(
+          builder: (_) =>
+              SlipUploadScreen(
+                orderId: order.id,
+                amount: order.totalAmount,
+                clearCartOnSuccess: true,
+              ),
+        ),
+      );
+    } catch (error) {
+      if (mounted) {
+        _showMessage(
+          error is StateError
+              ? error.message.toString()
+              : error is FirebaseException
+              ? 'จองสินค้าไม่สำเร็จ: ${error.message ?? error.code}'
+              : 'จองสินค้าไม่สำเร็จ กรุณาลองใหม่อีกครั้ง',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isReserving = false);
+    }
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   String _formatPrice(double price) {

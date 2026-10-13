@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/order_model.dart';
+import '../screens/customer/checkout/slip_upload_screen.dart';
 
 class OrderListContent extends StatefulWidget {
   const OrderListContent({
@@ -151,6 +152,10 @@ class _OrderCardState extends State<_OrderCard> {
   Widget build(BuildContext context) {
     final order = widget.order;
     final isReviewing = order.status == OrderStatus.pendingSlipReview;
+    final reservationExpired =
+        order.status == OrderStatus.pendingPayment &&
+        order.lockExpiresAt != null &&
+        !order.lockExpiresAt!.isAfter(DateTime.now());
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -180,7 +185,10 @@ class _OrderCardState extends State<_OrderCard> {
                 ),
               ),
               const SizedBox(width: 8),
-              _StatusBadge(status: order.status),
+              _StatusBadge(
+                status: order.status,
+                reservationExpired: reservationExpired,
+              ),
             ],
           ),
           const SizedBox(height: 10),
@@ -313,14 +321,33 @@ class _OrderCardState extends State<_OrderCard> {
                 ),
               ],
             ),
-          ] else if (widget.ownerView && order.status == OrderStatus.paid)
-            Align(
-              alignment: Alignment.centerRight,
-              child: OutlinedButton(
-                onPressed: null,
-                child: const Text('ชำระแล้ว'),
+          ] else if (!widget.ownerView &&
+              order.status == OrderStatus.pendingPayment &&
+              !reservationExpired) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => SlipUploadScreen(
+                      orderId: order.id,
+                      amount: order.totalAmount,
+                    ),
+                  ),
+                ),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF333333),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(9),
+                  ),
+                ),
+                child: const Text('ส่งสลิปชำระเงิน'),
               ),
             ),
+          ],
         ],
       ),
     );
@@ -435,12 +462,32 @@ class _OrderCardState extends State<_OrderCard> {
 }
 
 class _StatusBadge extends StatelessWidget {
-  const _StatusBadge({required this.status});
+  const _StatusBadge({
+    required this.status,
+    this.reservationExpired = false,
+  });
 
   final OrderStatus status;
+  final bool reservationExpired;
 
   @override
   Widget build(BuildContext context) {
+    if (reservationExpired) {
+      return Container(
+        constraints: const BoxConstraints(minWidth: 84),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF4F4F4),
+          border: Border.all(color: const Color(0xFF999999), width: 1.5),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: const Text(
+          'หมดเวลาจอง',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Color(0xFF777777), fontSize: 12),
+        ),
+      );
+    }
     final (label, color, background) = switch (status) {
       OrderStatus.pendingPayment => (
         'รอชำระ',
