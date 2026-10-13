@@ -90,20 +90,22 @@ service cloud.firestore {
     }
 
     // ---------- chat_rooms ----------
+    // roomId = '{customerId}_{ownerId}' จึงตรวจสิทธิ์จาก roomId ได้แม้ห้องยังไม่ถูกสร้าง
     match /chat_rooms/{roomId} {
       allow read, update: if isSignedIn()
             && request.auth.uid in resource.data.participants;
       allow create: if isSignedIn()
-            && request.auth.uid in request.resource.data.participants;
+            && request.auth.uid in request.resource.data.participants
+            && request.auth.uid in roomId.split('_');
       allow delete: if false;
 
       match /messages/{messageId} {
         allow read: if isSignedIn()
-            && request.auth.uid in get(/databases/$(database)/documents/chat_rooms/$(roomId)).data.participants;
+            && request.auth.uid in roomId.split('_');
         allow create: if isSignedIn()
             && request.resource.data.senderId == request.auth.uid
-            && request.auth.uid in get(/databases/$(database)/documents/chat_rooms/$(roomId)).data.participants;
-        allow update, delete: if false; // แชทแก้ไข/ลบย้อนหลังไม่ได้
+            && request.auth.uid in roomId.split('_');
+        allow update, delete: if false;
       }
     }
   }
