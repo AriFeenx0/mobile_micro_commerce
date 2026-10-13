@@ -7,21 +7,20 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/constants/app_routes.dart';
-import '../../../models/order_model.dart';
 import '../../../providers/cart_provider.dart';
 import '../../../services/order_service.dart';
 
 class SlipUploadScreen extends StatefulWidget {
   const SlipUploadScreen({
     super.key,
+    required this.orderId,
     required this.amount,
-    required this.shippingAddress,
-    required this.shippingFee,
+    this.clearCartOnSuccess = false,
   });
 
+  final String orderId;
   final double amount;
-  final String shippingAddress;
-  final double shippingFee;
+  final bool clearCartOnSuccess;
 
   @override
   State<SlipUploadScreen> createState() => _SlipUploadScreenState();
@@ -54,6 +53,14 @@ class _SlipUploadScreenState extends State<SlipUploadScreen> {
                   child: Text(
                     'แนบสลิปการโอนเงิน',
                     style: TextStyle(fontSize: 17, color: Color(0xFF777777)),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Center(
+                  child: Text(
+                    'กรุณาส่งสลิปภายใน 15 นาที หลังจากนั้นระบบจะคืนสต็อก',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Color(0xFFB05C00)),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -214,40 +221,15 @@ class _SlipUploadScreenState extends State<SlipUploadScreen> {
     if (slipImage == null || _isSubmitting) return;
 
     final cart = context.read<CartProvider>();
-    final cartItems = cart.items;
-    if (cartItems.isEmpty) {
-      _showMessage('ไม่พบสินค้าในตะกร้า');
-      return;
-    }
-
-    final ownerIds = cartItems.map((item) => item.book.ownerId).toSet();
-    if (ownerIds.length != 1 || ownerIds.single.isEmpty) {
-      _showMessage('คำสั่งซื้อนี้ต้องเป็นสินค้าจาก owner คนเดียว');
-      return;
-    }
 
     setState(() => _isSubmitting = true);
     try {
-      await _orderService.createOrder(
-        ownerId: ownerIds.single,
-        items: cartItems
-            .map(
-              (item) => OrderItem(
-                bookId: item.book.id,
-                volumeId: item.volume.id,
-                title: item.book.title,
-                volumeNumber: item.volume.volumeNumber,
-                price: item.volume.price,
-                qty: item.quantity,
-              ),
-            )
-            .toList(),
-        shippingAddress: widget.shippingAddress,
-        shippingFee: widget.shippingFee,
+      await _orderService.submitSlip(
+        orderId: widget.orderId,
         slipImage: slipImage,
       );
       if (!mounted) return;
-      cart.clearCurrentUserCart();
+      if (widget.clearCartOnSuccess) cart.clearCurrentUserCart();
       Navigator.pushNamedAndRemoveUntil(
         context,
         AppRoutes.customerOrderHistory,

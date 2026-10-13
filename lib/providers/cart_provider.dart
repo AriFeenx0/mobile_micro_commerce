@@ -53,7 +53,9 @@ class CartProvider extends ChangeNotifier {
     required BookVolumeModel volume,
     required int quantity,
   }) {
-    if (!volume.isAvailable || quantity < 1 || quantity > volume.stock) {
+    if (!volume.isAvailable ||
+        quantity < 1 ||
+        quantity > volume.availableStock) {
       return false;
     }
 
@@ -64,7 +66,7 @@ class CartProvider extends ChangeNotifier {
       _items.add(CartItem(book: book, volume: volume, quantity: quantity));
     } else {
       final updatedQuantity = _items[index].quantity + quantity;
-      if (updatedQuantity > volume.stock) return false;
+      if (updatedQuantity > volume.availableStock) return false;
       _items[index] = _items[index].copyWith(quantity: updatedQuantity);
     }
 
@@ -82,8 +84,9 @@ class CartProvider extends ChangeNotifier {
     if (quantity < 1) {
       _items.removeAt(index);
     } else {
+      if (item.volume.availableStock < 1) return;
       _items[index] = _items[index].copyWith(
-        quantity: quantity.clamp(1, item.volume.stock),
+        quantity: quantity.clamp(1, item.volume.availableStock),
       );
     }
     notifyListeners();

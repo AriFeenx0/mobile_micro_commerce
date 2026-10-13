@@ -20,6 +20,35 @@ service cloud.firestore {
       return isSignedIn() && myRole() == 'owner';
     }
 
+    function isValidReservationUpdate() {
+      return request.resource.data.stock == resource.data.stock &&
+             request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['reservations', 'updatedAt']) &&
+             request.resource.data.reservations is map &&
+             request.resource.data.reservations.keys().size() <= 100;
+    }
+
+    function isValidReservationOrder() {
+      return request.resource.data.status == 'รอชำระเงิน' &&
+             request.resource.data.ownerId is string &&
+             request.resource.data.ownerId.size() > 0 &&
+             request.resource.data.items is list &&
+             request.resource.data.items.size() > 0 &&
+             request.resource.data.items.size() <= 50 &&
+             request.resource.data.subtotal is number &&
+             request.resource.data.subtotal >= 0 &&
+             request.resource.data.shippingFee is number &&
+             request.resource.data.shippingFee >= 0 &&
+             request.resource.data.totalAmount is number &&
+             request.resource.data.totalAmount >= request.resource.data.subtotal &&
+             request.resource.data.shippingAddress is string &&
+             request.resource.data.shippingAddress.size() > 0 &&
+             request.resource.data.shippingAddress.size() <= 1000 &&
+             request.resource.data.lockExpiresAt is timestamp &&
+             request.resource.data.lockExpiresAt > request.time &&
+             request.resource.data.lockExpiresAt <= request.time + duration.value(16, 'm');
+    }
+
     // ---------- users ----------
     // ใครก็อ่านโปรไฟล์คนอื่นได้ (เช่น โชว์ชื่อในแชท/ออเดอร์)
     // แต่แก้ไขได้เฉพาะโปรไฟล์ตัวเอง และห้ามเปลี่ยน role ตัวเอง
@@ -47,16 +76,14 @@ service cloud.firestore {
         allow create, delete: if isShopOwner()
                     && get(/databases/$(database)/documents/books/$(bookId)).data.ownerId == request.auth.uid;
 
-        // แก้ไขปกติ (ราคา/สต๊อก/สภาพ) เฉพาะเจ้าของร้าน
-        // ส่วนลูกค้าได้รับอนุญาตให้แก้ "เฉพาะ" การล็อกสต๊อกตอน checkout เท่านั้น
-        // (ควรทำผ่าน Cloud Function + Transaction ในงานจริง ข้อนี้คือ fallback ฝั่ง client)
+        // ลูกค้าแก้ได้เฉพาะ reservations/updatedAt โดยแอปจะอัปเดตคู่กับ
+        // คำสั่งซื้อใน transaction; สำหรับ production ควรย้ายการจองไป backend.
         allow update: if (
               isShopOwner() &&
               get(/databases/$(database)/documents/books/$(bookId)).data.ownerId == request.auth.uid
             ) || (
               isSignedIn() &&
-              request.resource.data.diff(resource.data).affectedKeys()
-                .hasOnly(['lockedUntil', 'lockedByOrderId', 'updatedAt'])
+              isValidReservationUpdate()
             );
       }
     }
@@ -69,7 +96,8 @@ service cloud.firestore {
              resource.data.ownerId == request.auth.uid);
 
       allow create: if isSignedIn() &&
-            request.resource.data.customerId == request.auth.uid;
+            request.resource.data.customerId == request.auth.uid &&
+            isValidReservationOrder();
 
       // ลูกค้าแก้ไขได้แค่ตอนยังไม่ชำระ (เช่น อัปโหลดสลิป)
       // เจ้าของร้านแก้ไขได้เพื่อเปลี่ยนสถานะ/ยืนยันการชำระ/ใส่เลขพัสดุ

@@ -196,7 +196,7 @@ class _CartItemRow extends StatelessWidget {
                   ),
                   _CartQuantityButton(
                     icon: Icons.add,
-                    onPressed: item.quantity < item.volume.stock
+                    onPressed: item.quantity < item.volume.availableStock
                         ? () => onQuantityChanged(item.quantity + 1)
                         : null,
                   ),

@@ -148,7 +148,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                     if (selectedVolume != null) ...[
                       const SizedBox(height: 12),
                       Text(
-                        'สินค้าคงเหลือ ${selectedVolume.isAvailable ? selectedVolume.stock : 0} ชิ้น'
+                        'สินค้าคงเหลือ ${selectedVolume.availableStock} ชิ้น'
                         '  ·  ${selectedVolume.condition}',
                         style: const TextStyle(color: Color(0xFF777777)),
                       ),
@@ -184,7 +184,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                           onPressed:
                               selectedVolume != null &&
                                   selectedVolume.isAvailable &&
-                                  _quantity < selectedVolume.stock
+                                  _quantity < selectedVolume.availableStock
                               ? () => setState(() => _quantity++)
                               : null,
                         ),

@@ -214,18 +214,62 @@ class BookService {
           .map((volume) => 'volume_${volume.volumeNumber}')
           .toSet();
       final existingVolumeDocuments = await volumesReference.get();
-      final batch = _firestore.batch();
-      for (final document in existingVolumeDocuments.docs) {
-        if (!volumeIds.contains(document.id)) batch.delete(document.reference);
-      }
-      for (final volume in volumes) {
-        final volumeReference = volumesReference.doc(
-          'volume_${volume.volumeNumber}',
-        );
-        batch.set(volumeReference, volume.toJson());
-      }
-      batch.set(bookReference, savedBook.toJson());
-      await batch.commit();
+      await _firestore.runTransaction((transaction) async {
+        final currentBook = await transaction.get(bookReference);
+        if (!currentBook.exists ||
+            currentBook.data()?['ownerId'] != owner.uid) {
+          throw StateError('ไม่สามารถแก้ไขหนังสือของผู้ใช้อื่นได้');
+        }
+        final volumeReferences =
+            <String, DocumentReference<Map<String, dynamic>>>{};
+        for (final document in existingVolumeDocuments.docs) {
+          volumeReferences[document.id] = document.reference;
+        }
+        for (final volume in volumes) {
+          final volumeReference = volumesReference.doc(
+            'volume_${volume.volumeNumber}',
+          );
+          volumeReferences[volumeReference.id] = volumeReference;
+        }
+        final existingById = <String, DocumentSnapshot<Map<String, dynamic>>>{};
+        for (final entry in volumeReferences.entries) {
+          existingById[entry.key] = await transaction.get(entry.value);
+        }
+
+        for (final document in existingVolumeDocuments.docs) {
+          final currentSnapshot = existingById[document.id]!;
+          if (currentSnapshot.exists && !volumeIds.contains(document.id)) {
+            final currentVolume = BookVolumeModel.fromJson(
+              document.id,
+              book.id,
+              currentSnapshot.data()!,
+            );
+            if (currentVolume.reservedQuantity > 0) {
+              throw StateError('ไม่สามารถลบเล่มที่มีการจองสต็อกอยู่ได้');
+            }
+            transaction.delete(document.reference);
+          }
+        }
+        for (final volume in volumes) {
+          final volumeReference = volumesReference.doc(
+            'volume_${volume.volumeNumber}',
+          );
+          final existingVolume = existingById[volumeReference.id];
+          if (existingVolume?.exists == true) {
+            final currentVolume = BookVolumeModel.fromJson(
+              existingVolume!.id,
+              book.id,
+              existingVolume.data()!,
+            );
+            if (volume.stock < currentVolume.reservedQuantity) {
+              throw StateError('สต็อกใหม่ต้องไม่น้อยกว่าจำนวนที่กำลังถูกจอง');
+            }
+          }
+          final volumeData = volume.toJson()..remove('reservations');
+          transaction.set(volumeReference, volumeData, SetOptions(merge: true));
+        }
+        transaction.set(bookReference, savedBook.toJson());
+      });
 
       return savedBook;
     } catch (_) {
