@@ -4,7 +4,7 @@ A new Flutter project.
 
 ## Cloudinary Image Uploads
 
-Book cover uploads use Cloudinary's unsigned Upload API preset. In Cloudinary Console, create an **unsigned** upload preset and restrict it to image formats the app accepts (JPG, PNG, or WebP). Set the preset's asset folder to `books`; the app sends `owner_id` and `book_id` as asset context.
+Book cover, order slip, and chat image uploads use Cloudinary's unsigned Upload API preset. In Cloudinary Console, create an **unsigned** upload preset and restrict it to image formats the app accepts (JPG, PNG, or WebP). Set the preset's asset folder as desired; the app sends identifying values as asset context.
 
 Pass the Cloudinary cloud name and preset name when launching the app:
 
