@@ -37,6 +37,21 @@ class DashboardScreen extends StatelessWidget {
             final unconfirmedCount = orders
                 .where((order) => order.status == OrderStatus.pendingSlipReview)
                 .length;
+            final totalRevenue = orders
+                .where((order) => order.status == OrderStatus.paid)
+                .fold<double>(0, (sum, order) => sum + order.subtotal);
+            final now = DateTime.now();
+            // ไม่มี field วันที่ชำระ จึงใช้ updatedAt (เวลาเปลี่ยนเป็นสถานะชำระแล้ว)
+            final todayRevenue = orders
+                .where((order) {
+                  final date = order.updatedAt ?? order.createdAt;
+                  return order.status == OrderStatus.paid &&
+                      date != null &&
+                      date.year == now.year &&
+                      date.month == now.month &&
+                      date.day == now.day;
+                })
+                .fold<double>(0, (sum, order) => sum + order.subtotal);
             final recentOrders = orders.take(2).toList();
             return Scaffold(
               backgroundColor: Colors.white,
@@ -62,20 +77,25 @@ class DashboardScreen extends StatelessWidget {
                               children: [
                                 Row(
                                   children: [
-                                    const Expanded(
+                                    Expanded(
                                       child: _MetricPanel(
-                                        label: 'ยอดขายวันนี้',
-                                        value: '฿',
+                                        label: 'รายได้รวม',
+                                        value: '฿${totalRevenue.toStringAsFixed(2)}',
                                       ),
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: _MetricPanel(
-                                        label: 'ออเดอร์รอยืนยัน',
-                                        value: '$unconfirmedCount',
+                                        label: 'รายได้วันนี้',
+                                        value: '฿${todayRevenue.toStringAsFixed(2)}',
                                       ),
                                     ),
                                   ],
+                                ),
+                                const SizedBox(height: 12),
+                                _MetricPanel(
+                                  label: 'ออเดอร์รอยืนยัน',
+                                  value: '$unconfirmedCount',
                                 ),
                                 const SizedBox(height: 16),
                                 Container(
