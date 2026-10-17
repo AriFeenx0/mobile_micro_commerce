@@ -28,25 +28,61 @@ service cloud.firestore {
              request.resource.data.reservations.keys().size() <= 100;
     }
 
-    function isValidReservationOrder() {
-      return request.resource.data.status == 'รอชำระเงิน' &&
-             request.resource.data.ownerId is string &&
-             request.resource.data.ownerId.size() > 0 &&
-             request.resource.data.items is list &&
-             request.resource.data.items.size() > 0 &&
-             request.resource.data.items.size() <= 50 &&
-             request.resource.data.subtotal is number &&
-             request.resource.data.subtotal >= 0 &&
-             request.resource.data.shippingFee is number &&
-             request.resource.data.shippingFee >= 0 &&
-             request.resource.data.totalAmount is number &&
-             request.resource.data.totalAmount >= request.resource.data.subtotal &&
-             request.resource.data.shippingAddress is string &&
-             request.resource.data.shippingAddress.size() > 0 &&
-             request.resource.data.shippingAddress.size() <= 1000 &&
-             request.resource.data.lockExpiresAt is timestamp &&
-             request.resource.data.lockExpiresAt > request.time &&
-             request.resource.data.lockExpiresAt <= request.time + duration.value(16, 'm');
+    function isValidCouponReservationUpdate() {
+      return request.resource.data.usedCount == resource.data.usedCount &&
+             request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['reservations', 'updatedAt']) &&
+             request.resource.data.reservations is map &&
+             request.resource.data.reservations.keys().size() <= 100;
+    }
+
+    // ตรวจว่าคูปองที่แนบกับออเดอร์ถูกจองใน transaction เดียวกัน และส่วนลดไม่เกินที่คูปองให้ได้
+    function isValidOrderCoupon(orderId) {
+      let data = request.resource.data;
+      let path = /databases/$(database)/documents/coupons/$(data.couponCode);
+      let before = get(path).data;
+      let after = getAfter(path).data;
+      return data.couponCode is string &&
+             data.couponCode.matches('[A-Z0-9_-]{3,20}') &&
+             before.ownerId == data.ownerId &&
+             before.isActive == true &&
+             (before.get('expiresAt', null) == null || before.expiresAt > request.time) &&
+             data.subtotal >= before.get('minOrderAmount', 0) &&
+             data.discountAmount > 0 &&
+             data.discountAmount <= (before.discountType == 'percent'
+               ? data.subtotal * before.discountValue / 100 + 0.01
+               : before.discountValue + 0.01) &&
+             after.reservations[orderId].customerId == request.auth.uid &&
+             after.usedCount == before.usedCount;
+    }
+
+    function isValidReservationOrder(orderId) {
+      let data = request.resource.data;
+      return data.status == 'รอชำระเงิน' &&
+             data.ownerId is string &&
+             data.ownerId.size() > 0 &&
+             data.items is list &&
+             data.items.size() > 0 &&
+             data.items.size() <= 50 &&
+             data.subtotal is number &&
+             data.subtotal >= 0 &&
+             data.shippingFee is number &&
+             data.shippingFee >= 0 &&
+             data.discountAmount is number &&
+             data.discountAmount >= 0 &&
+             data.discountAmount <= data.subtotal &&
+             data.totalAmount is number &&
+             data.totalAmount >= data.subtotal + data.shippingFee - data.discountAmount - 0.01 &&
+             data.totalAmount <= data.subtotal + data.shippingFee - data.discountAmount + 0.01 &&
+             (data.get('couponCode', null) == null
+               ? data.discountAmount == 0
+               : isValidOrderCoupon(orderId)) &&
+             data.shippingAddress is string &&
+             data.shippingAddress.size() > 0 &&
+             data.shippingAddress.size() <= 1000 &&
+             data.lockExpiresAt is timestamp &&
+             data.lockExpiresAt > request.time &&
+             data.lockExpiresAt <= request.time + duration.value(16, 'm');
     }
 
     // ---------- users ----------
@@ -97,7 +133,7 @@ service cloud.firestore {
 
       allow create: if isSignedIn() &&
             request.resource.data.customerId == request.auth.uid &&
-            isValidReservationOrder();
+            isValidReservationOrder(orderId);
 
       // ลูกค้าแก้ไขได้แค่ตอนยังไม่ชำระ (เช่น อัปโหลดสลิป)
       // เจ้าของร้านแก้ไขได้เพื่อเปลี่ยนสถานะ/ยืนยันการชำระ/ใส่เลขพัสดุ
@@ -111,10 +147,20 @@ service cloud.firestore {
     }
 
     // ---------- coupons ----------
+    // Document ID = โค้ดคูปอง จึงอ่านด้วย get ตรงๆ ได้ และสร้างโค้ดซ้ำไม่ได้
     match /coupons/{couponId} {
-      allow read: if true; // ลูกค้าต้องอ่านได้เพื่อเช็กโค้ดตอน checkout
-      allow create, update, delete: if isShopOwner()
-            && resource == null || resource.data.ownerId == request.auth.uid;
+      allow get: if isSignedIn();
+      allow list: if isShopOwner() && resource.data.ownerId == request.auth.uid;
+      allow create: if isShopOwner()
+            && request.resource.data.ownerId == request.auth.uid
+            && request.resource.data.code == couponId
+            && couponId.matches('[A-Z0-9_-]{3,20}')
+            && request.resource.data.usedCount == 0;
+      // ลูกค้าแก้ได้เฉพาะ reservations (เหมือนการล็อกสต๊อก) ห้ามแตะ usedCount
+      allow update: if (isShopOwner() && resource.data.ownerId == request.auth.uid
+                        && request.resource.data.ownerId == resource.data.ownerId)
+                    || (isSignedIn() && isValidCouponReservationUpdate());
+      allow delete: if isShopOwner() && resource.data.ownerId == request.auth.uid;
     }
 
     // ---------- chat_rooms ----------

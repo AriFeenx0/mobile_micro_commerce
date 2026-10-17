@@ -3,7 +3,9 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../models/coupon_model.dart';
 import '../../../models/order_model.dart';
+import '../../../services/coupon_service.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/cart_provider.dart';
 import '../../../services/order_service.dart';
@@ -25,6 +27,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   String? _addressProfileId;
   _PaymentMethod _paymentMethod = _PaymentMethod.promptPay;
   bool _isReserving = false;
+  bool _isCheckingCoupon = false;
+  final _couponController = TextEditingController();
+  final _couponService = CouponService();
+  CouponModel? _appliedCoupon;
 
   @override
   void didChangeDependencies() {
@@ -39,14 +45,45 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   @override
   void dispose() {
     _addressController.dispose();
+    _couponController.dispose();
     super.dispose();
+  }
+
+  // ตรวจคูปองเพื่อแสดงตัวอย่างส่วนลด ส่วนการจองสิทธิ์จริงทำใน reserveOrder
+  Future<void> _applyCoupon(CartProvider cart) async {
+    final ownerIds = cart.items.map((item) => item.book.ownerId).toSet();
+    if (ownerIds.length != 1 || ownerIds.single.isEmpty) {
+      _showMessage('คำสั่งซื้อนี้ต้องเป็นสินค้าจากร้านเดียว');
+      return;
+    }
+    setState(() => _isCheckingCoupon = true);
+    try {
+      final coupon = await _couponService.validateForCheckout(
+        rawCode: _couponController.text,
+        shopOwnerId: ownerIds.single,
+        subtotal: cart.total,
+      );
+      if (!mounted) return;
+      setState(() => _appliedCoupon = coupon);
+    } catch (error) {
+      if (mounted) {
+        _showMessage(
+          error is StateError
+              ? error.message.toString()
+              : 'ตรวจสอบคูปองไม่สำเร็จ กรุณาลองใหม่',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isCheckingCoupon = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Consumer<CartProvider>(
       builder: (context, cart, _) {
-        final total = cart.total + _shippingFee;
+        final discount = _appliedCoupon?.discountFor(cart.total) ?? 0;
+        final total = cart.total + _shippingFee - discount;
         return Scaffold(
           backgroundColor: Colors.white,
           appBar: AppBar(
@@ -111,33 +148,62 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             const SizedBox(height: 28),
                             const _SectionLabel('ใช้คูปอง'),
                             const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                const Expanded(
-                                  child: TextField(
-                                    decoration: InputDecoration(
-                                      border: OutlineInputBorder(),
-                                      contentPadding: EdgeInsets.symmetric(
-                                        horizontal: 14,
-                                        vertical: 12,
+                            if (_appliedCoupon != null) ...[
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      'คูปอง ${_appliedCoupon!.code}',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w600,
                                       ),
                                     ),
                                   ),
-                                ),
-                                const SizedBox(width: 12),
-                                SizedBox(
-                                  height: 48,
-                                  child: FilledButton(
-                                    onPressed: () {},
-                                    style: FilledButton.styleFrom(
-                                      backgroundColor: const Color(0xFF333333),
-                                      foregroundColor: Colors.white,
-                                    ),
-                                    child: const Text('ใช้'),
+                                  Text('-${_formatPrice(discount)}'),
+                                  IconButton(
+                                    tooltip: 'ยกเลิกคูปอง',
+                                    onPressed: () =>
+                                        setState(() => _appliedCoupon = null),
+                                    icon: const Icon(Icons.close),
                                   ),
-                                ),
-                              ],
-                            ),
+                                ],
+                              ),
+                            ] else
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: TextField(
+                                      controller: _couponController,
+                                      textCapitalization:
+                                          TextCapitalization.characters,
+                                      decoration: const InputDecoration(
+                                        hintText: 'กรอกโค้ดคูปอง',
+                                        border: OutlineInputBorder(),
+                                        contentPadding: EdgeInsets.symmetric(
+                                          horizontal: 14,
+                                          vertical: 12,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  SizedBox(
+                                    height: 48,
+                                    child: FilledButton(
+                                      onPressed: _isCheckingCoupon
+                                          ? null
+                                          : () => _applyCoupon(cart),
+                                      style: FilledButton.styleFrom(
+                                        backgroundColor: const Color(
+                                          0xFF333333,
+                                        ),
+                                        foregroundColor: Colors.white,
+                                      ),
+                                      child: const Text('ใช้'),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             const SizedBox(height: 28),
                             const _SectionLabel('ช่องทางการชำระเงิน'),
                             const SizedBox(height: 8),
@@ -261,6 +327,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             .toList(),
         shippingAddress: address,
         shippingFee: _shippingFee,
+        couponCode: _appliedCoupon?.code,
       );
       if (!mounted) return;
       await Navigator.push<void>(
