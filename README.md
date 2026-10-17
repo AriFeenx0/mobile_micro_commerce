@@ -20,4 +20,3 @@ Love Read Book Store เป็นโปรแกรมร้านหนัง�
 - **QR Flutter** — สร้างและแสดง QR Code
 - **Cupertino Icons** — ใช้ชุดไอคอนรูปแบบ iOS
 
-สำหรับการทดสอบและตรวจสอบคุณภาพโค้ด ใช้ **Flutter Test** และ **Flutter Lints** ตามลำดับ

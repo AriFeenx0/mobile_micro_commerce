@@ -52,8 +52,24 @@ class _LoginScreenState extends State<LoginScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const SizedBox(height: 12),
-                    AuthFormStyle.logo(),
-                    const SizedBox(height: 22),
+                    Image.asset(
+                      'assets/icons/Love Read Book Store Icon.png',
+                      width: 116,
+                      height: 116,
+                      fit: BoxFit.contain,
+                      semanticLabel: 'Love Read Bookstore logo',
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Love Read Bookstore',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Color(0xFF333333),
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
                     AuthFormStyle.label('Email'),
                     const SizedBox(height: 6),
                     TextFormField(
