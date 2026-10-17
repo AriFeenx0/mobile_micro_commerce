@@ -41,6 +41,20 @@ class CouponService {
     return coupon;
   }
 
+  /// คูปองที่ลูกค้าใช้ได้ตอนนี้ (เปิดใช้งาน ไม่หมดอายุ และโควต้ายังเหลือ)
+  Stream<List<CouponModel>> watchActiveCoupons() {
+    return _coupons.where('isActive', isEqualTo: true).snapshots().map((
+      snapshot,
+    ) {
+      final coupons = snapshot.docs
+          .map((doc) => CouponModel.fromJson(doc.id, doc.data()))
+          .where((coupon) => coupon.isValidNow)
+          .toList();
+      coupons.sort((a, b) => a.code.compareTo(b.code));
+      return coupons;
+    });
+  }
+
   Stream<List<CouponModel>> watchCouponsForOwner(String ownerId) {
     return _coupons.where('ownerId', isEqualTo: ownerId).snapshots().map((
       snapshot,

@@ -150,7 +150,10 @@ service cloud.firestore {
     // Document ID = โค้ดคูปอง จึงอ่านด้วย get ตรงๆ ได้ และสร้างโค้ดซ้ำไม่ได้
     match /coupons/{couponId} {
       allow get: if isSignedIn();
-      allow list: if isShopOwner() && resource.data.ownerId == request.auth.uid;
+      // ลูกค้า list ได้เฉพาะคูปองที่เปิดใช้งาน (query ต้องมี where isActive == true)
+      allow list: if isSignedIn() && (
+            resource.data.isActive == true ||
+            (isShopOwner() && resource.data.ownerId == request.auth.uid));
       allow create: if isShopOwner()
             && request.resource.data.ownerId == request.auth.uid
             && request.resource.data.code == couponId
