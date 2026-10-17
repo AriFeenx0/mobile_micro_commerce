@@ -72,6 +72,20 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> updateBankAccount({
+    required String bankName,
+    required String accountNumber,
+    required String accountName,
+  }) async {
+    _profile = await _authService.updateBankAccount(
+      bankName: bankName,
+      accountNumber: accountNumber,
+      accountName: accountName,
+    );
+    _error = null;
+    notifyListeners();
+  }
+
   Future<void> signOut() => _authService.signOut();
 
   @override

@@ -5,9 +5,13 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../core/constants/app_routes.dart';
+import '../../../core/utils/promptpay.dart';
+import '../../../models/user_model.dart';
 import '../../../providers/cart_provider.dart';
+import '../../../services/chat_service.dart';
 import '../../../services/order_service.dart';
 
 class SlipUploadScreen extends StatefulWidget {
@@ -16,11 +20,13 @@ class SlipUploadScreen extends StatefulWidget {
     required this.orderId,
     required this.amount,
     this.clearCartOnSuccess = false,
+    this.usePromptPay = true,
   });
 
   final String orderId;
   final double amount;
   final bool clearCartOnSuccess;
+  final bool usePromptPay;
 
   @override
   State<SlipUploadScreen> createState() => _SlipUploadScreenState();
@@ -29,6 +35,7 @@ class SlipUploadScreen extends StatefulWidget {
 class _SlipUploadScreenState extends State<SlipUploadScreen> {
   final _imagePicker = ImagePicker();
   final _orderService = OrderService();
+  late final Future<UserModel?> _ownerFuture = ChatService().getOwner();
   XFile? _slipImage;
   Uint8List? _slipBytes;
   bool _isPicking = false;
@@ -87,21 +94,79 @@ class _SlipUploadScreenState extends State<SlipUploadScreen> {
                     color: const Color(0xFFF5F5F5),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'ธนาคารกสิกรไทย',
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                      SizedBox(height: 6),
-                      Text('ชื่อบัญชี: ร้านหนังสือตัวอย่าง'),
-                      SizedBox(height: 4),
-                      Text(
-                        'เลขที่บัญชี: 123-4-56789-0',
-                        style: TextStyle(fontSize: 16),
-                      ),
-                    ],
+                  child: FutureBuilder<UserModel?>(
+                    future: _ownerFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState != ConnectionState.done) {
+                        return const Padding(
+                          padding: EdgeInsets.all(40),
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      }
+                      final owner = snapshot.data;
+                      if (!widget.usePromptPay) {
+                        if (owner == null || !owner.hasBankAccount) {
+                          return const Text(
+                            'ร้านยังไม่ได้ตั้งค่าบัญชีธนาคาร กรุณาติดต่อร้านค้า',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Color(0xFFB05C00)),
+                          );
+                        }
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              owner.bankName,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text('ชื่อบัญชี: ${owner.bankAccountName}'),
+                            const SizedBox(height: 4),
+                            SelectableText(
+                              'เลขที่บัญชี: ${owner.bankAccountNumber}',
+                              style: const TextStyle(fontSize: 16),
+                            ),
+                          ],
+                        );
+                      }
+                      final phone = owner?.phone.trim() ?? '';
+                      if (owner == null || phone.isEmpty) {
+                        return const Text(
+                          'ร้านยังไม่ได้ตั้งเบอร์ PromptPay กรุณาติดต่อร้านค้า',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Color(0xFFB05C00)),
+                        );
+                      }
+                      return Column(
+                        children: [
+                          const Text(
+                            'สแกนจ่ายด้วย PromptPay',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            color: Colors.white,
+                            child: QrImageView(
+                              data: PromptPay.payload(
+                                phone,
+                                amount: widget.amount,
+                              ),
+                              size: 220,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(owner.name),
+                          const SizedBox(height: 4),
+                          Text(
+                            'ยอด ${_formatPrice(widget.amount)}',
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(height: 12),

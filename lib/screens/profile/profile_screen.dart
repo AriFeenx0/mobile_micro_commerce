@@ -175,10 +175,10 @@ class ProfileScreen extends StatelessWidget {
                         ),
                         _ProfileMenuRow(
                           icon: Icons.account_balance_outlined,
-                          title: 'บัญชีรับเงิน (พร้อมเพย์/ธนาคาร)',
-                          onTap: () => _showPlaceholder(
+                          title: 'บัญชีรับเงิน',
+                          onTap: () => Navigator.pushNamed(
                             context,
-                            'บัญชีรับเงิน (พร้อมเพย์/ธนาคาร)',
+                            AppRoutes.payoutAccount,
                           ),
                         ),
                         _ProfileMenuRow(

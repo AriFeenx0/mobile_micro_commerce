@@ -195,10 +195,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                               width: double.infinity,
                               height: 54,
                               child: FilledButton(
-                                onPressed:
-                                    _paymentMethod ==
-                                            _PaymentMethod.bankTransfer &&
-                                        !_isReserving
+                                onPressed: !_isReserving
                                     ? () => _startCheckout(cart)
                                     : null,
                                 style: FilledButton.styleFrom(
@@ -269,12 +266,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       await Navigator.push<void>(
         context,
         MaterialPageRoute<void>(
-          builder: (_) =>
-              SlipUploadScreen(
-                orderId: order.id,
-                amount: order.totalAmount,
-                clearCartOnSuccess: true,
-              ),
+          builder: (_) => SlipUploadScreen(
+            orderId: order.id,
+            amount: order.totalAmount,
+            clearCartOnSuccess: true,
+            usePromptPay: _paymentMethod == _PaymentMethod.promptPay,
+          ),
         ),
       );
     } catch (error) {
