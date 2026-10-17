@@ -19,6 +19,9 @@ class UserModel {
   final UserRole role;
   final String address;
   final String? photoUrl;
+  final String bankName;
+  final String bankAccountNumber;
+  final String bankAccountName;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -30,9 +33,15 @@ class UserModel {
     required this.role,
     this.address = '',
     this.photoUrl,
+    this.bankName = '',
+    this.bankAccountNumber = '',
+    this.bankAccountName = '',
     this.createdAt,
     this.updatedAt,
   });
+
+  bool get hasBankAccount =>
+      bankName.trim().isNotEmpty && bankAccountNumber.trim().isNotEmpty;
 
   /// สร้าง UserModel จาก Firestore document
   /// ใช้แบบ: UserModel.fromJson(doc.id, doc.data()!)
@@ -45,6 +54,9 @@ class UserModel {
       role: _roleFromString(json['role'] as String? ?? 'customer'),
       address: json['address'] as String? ?? '',
       photoUrl: json['photoUrl'] as String?,
+      bankName: json['bankName'] as String? ?? '',
+      bankAccountNumber: json['bankAccountNumber'] as String? ?? '',
+      bankAccountName: json['bankAccountName'] as String? ?? '',
       createdAt: (json['createdAt'] as Timestamp?)?.toDate(),
       updatedAt: (json['updatedAt'] as Timestamp?)?.toDate(),
     );
@@ -60,6 +72,9 @@ class UserModel {
       'role': _roleToString(role),
       'address': address,
       'photoUrl': photoUrl,
+      'bankName': bankName,
+      'bankAccountNumber': bankAccountNumber,
+      'bankAccountName': bankAccountName,
       'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     };
@@ -70,6 +85,9 @@ class UserModel {
     String? phone,
     String? address,
     String? photoUrl,
+    String? bankName,
+    String? bankAccountNumber,
+    String? bankAccountName,
   }) {
     return UserModel(
       id: id,
@@ -79,6 +97,9 @@ class UserModel {
       role: role,
       address: address ?? this.address,
       photoUrl: photoUrl ?? this.photoUrl,
+      bankName: bankName ?? this.bankName,
+      bankAccountNumber: bankAccountNumber ?? this.bankAccountNumber,
+      bankAccountName: bankAccountName ?? this.bankAccountName,
       createdAt: createdAt,
       updatedAt: DateTime.now(),
     );

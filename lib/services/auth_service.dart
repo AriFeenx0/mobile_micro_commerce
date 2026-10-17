@@ -116,6 +116,32 @@ class AuthService {
     return updatedProfile;
   }
 
+  Future<UserModel> updateBankAccount({
+    required String bankName,
+    required String accountNumber,
+    required String accountName,
+  }) async {
+    final firebaseUser = _auth.currentUser;
+    if (firebaseUser == null) {
+      throw StateError('กรุณาเข้าสู่ระบบก่อนแก้ไขบัญชีรับเงิน');
+    }
+    final currentProfile = await getUserProfile(firebaseUser.uid);
+    if (currentProfile == null || currentProfile.role != UserRole.owner) {
+      throw StateError('เฉพาะเจ้าของร้านเท่านั้นที่แก้ไขบัญชีรับเงินได้');
+    }
+
+    final updatedProfile = currentProfile.copyWith(
+      bankName: bankName.trim(),
+      bankAccountNumber: accountNumber.trim(),
+      bankAccountName: accountName.trim(),
+    );
+    await _users.doc(firebaseUser.uid).set(
+      updatedProfile.toJson(),
+      SetOptions(merge: true),
+    );
+    return updatedProfile;
+  }
+
   Future<void> sendPasswordResetEmail(String email) =>
       _auth.sendPasswordResetEmail(email: email.trim());
 

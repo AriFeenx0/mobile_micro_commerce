@@ -3,6 +3,7 @@ abstract final class AppRoutes {
   static const login = '/login';
   static const register = '/register';
   static const editProfile = '/profile/edit';
+  static const payoutAccount = '/profile/payout-account';
 
   static const customerBooks = '/customer/books';
   static const customerBookDetail = '/customer/books/detail';

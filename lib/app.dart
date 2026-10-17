@@ -22,6 +22,7 @@ import 'screens/owner/book_manage/book_manage_list_screen.dart';
 import 'screens/owner/coupon_manage/coupon_manage_screen.dart';
 import 'screens/owner/dashboard/dashboard_screen.dart';
 import 'screens/owner/order_manage/order_manage_screen.dart';
+import 'screens/owner/payout_account/payout_account_screen.dart';
 import 'screens/profile/profile_screen.dart';
 
 class MainApp extends StatelessWidget {
@@ -43,6 +44,7 @@ class MainApp extends StatelessWidget {
 				AppRoutes.login: (_) => const LoginScreen(),
 				AppRoutes.register: (_) => const RegisterScreen(),
 				AppRoutes.editProfile: (_) => const EditProfileScreen(),
+				AppRoutes.payoutAccount: (_) => const PayoutAccountScreen(),
 				AppRoutes.customerBooks: (_) => const BookListScreen(),
 				AppRoutes.customerBookDetail: (context) {
 					final book = ModalRoute.of(context)?.settings.arguments;
