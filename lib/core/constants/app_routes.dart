@@ -10,6 +10,7 @@ abstract final class AppRoutes {
   static const customerCart = '/customer/cart';
   static const customerCheckout = '/customer/checkout';
   static const customerOrderHistory = '/customer/orders';
+  static const customerCoupons = '/customer/coupons';
 
   static const ownerDashboard = '/owner/dashboard';
   static const ownerBooks = '/owner/books';

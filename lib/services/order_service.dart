@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../models/coupon_model.dart';
 import '../models/order_model.dart';
 import 'storage_service.dart';
 
@@ -19,6 +20,7 @@ class OrderService {
   static const String booksCollection = 'books';
   static const String usersCollection = 'users';
   static const String volumesCollection = 'volumes';
+  static const String couponsCollection = 'coupons';
 
   final FirebaseFirestore _firestore;
   final FirebaseAuth _auth;
@@ -34,6 +36,7 @@ class OrderService {
     required List<OrderItem> items,
     required String shippingAddress,
     required double shippingFee,
+    String? couponCode,
   }) async {
     final customer = _auth.currentUser;
     if (customer == null) throw StateError('กรุณาเข้าสู่ระบบก่อนสั่งสินค้า');
@@ -55,6 +58,15 @@ class OrderService {
 
     final orderReference = _orders.doc();
     final stockChanges = _stockChangesForItems(items);
+    final normalizedCoupon = couponCode == null || couponCode.trim().isEmpty
+        ? null
+        : CouponModel.normalizeCode(couponCode);
+    if (normalizedCoupon != null && !CouponModel.isValidCode(normalizedCoupon)) {
+      throw StateError('รูปแบบโค้ดคูปองไม่ถูกต้อง');
+    }
+    final couponReference = normalizedCoupon == null
+        ? null
+        : _firestore.collection(couponsCollection).doc(normalizedCoupon);
 
     return _firestore.runTransaction((transaction) async {
       final createdAt = DateTime.now();
@@ -83,6 +95,10 @@ class OrderService {
           entry.value.reference,
         );
       }
+
+      final couponSnapshot = couponReference == null
+          ? null
+          : await transaction.get(couponReference);
 
       final reservationsByVolume = <String, Map<String, dynamic>>{};
       final expiredOrderIds = <String>{};
@@ -147,6 +163,31 @@ class OrderService {
         0,
         (total, item) => total + item.price * item.qty,
       );
+
+      var discountAmount = 0.0;
+      Map<String, dynamic>? couponReservations;
+      if (couponSnapshot != null) {
+        final couponData = couponSnapshot.data();
+        if (!couponSnapshot.exists || couponData == null) {
+          throw StateError('ไม่พบคูปองนี้');
+        }
+        final coupon = CouponModel.fromJson(couponSnapshot.id, couponData);
+        final reason = coupon.invalidReason(subtotal, shopOwnerId: ownerId);
+        if (reason != null) throw StateError(reason);
+
+        couponReservations = _reservationsFrom(couponData['reservations'])
+          ..removeWhere((_, value) {
+            final expiresAt = value is Map ? value['expiresAt'] : null;
+            return value is Map &&
+                value['status'] == 'pendingPayment' &&
+                expiresAt is Timestamp &&
+                !expiresAt.toDate().isAfter(createdAt);
+          });
+        if (couponReservations.length >= 100) {
+          throw StateError('มีรายการจองคูปองค้างมากเกินไป กรุณาลองใหม่ภายหลัง');
+        }
+        discountAmount = coupon.discountFor(subtotal);
+      }
       final order = OrderModel(
         id: orderReference.id,
         customerId: customer.uid,
@@ -154,7 +195,9 @@ class OrderService {
         items: orderItems,
         subtotal: subtotal,
         shippingFee: shippingFee,
-        totalAmount: subtotal + shippingFee,
+        couponCode: couponSnapshot == null ? null : normalizedCoupon,
+        discountAmount: discountAmount,
+        totalAmount: subtotal + shippingFee - discountAmount,
         shippingAddress: shippingAddress.trim(),
         paymentMethod: 'โอนธนาคาร',
         status: OrderStatus.pendingPayment,
@@ -175,6 +218,17 @@ class OrderService {
         });
       }
       transaction.set(orderReference, order.toJson());
+      if (couponReference != null && couponReservations != null) {
+        couponReservations[orderReference.id] = {
+          'customerId': customer.uid,
+          'status': 'pendingPayment',
+          'expiresAt': Timestamp.fromDate(lockExpiresAt),
+        };
+        transaction.update(couponReference, {
+          'reservations': couponReservations,
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+      }
       for (final entry in expiredOrders.entries) {
         final oldOrder = entry.value.data();
         final oldLockExpiresAt = oldOrder?['lockExpiresAt'];
@@ -232,6 +286,10 @@ class OrderService {
       final isExpired =
           order.lockExpiresAt == null ||
           !order.lockExpiresAt!.isAfter(DateTime.now());
+      final couponReference = _couponReferenceFor(order);
+      final couponSnapshot = couponReference == null
+          ? null
+          : await transaction.get(couponReference);
       for (final entry in stockChanges.entries) {
         final volumeData = volumeSnapshots[entry.key]?.data();
         final reservations = _reservationsFrom(volumeData?['reservations']);
@@ -252,6 +310,29 @@ class OrderService {
           };
         }
         transaction.update(entry.value.reference, {
+          'reservations': reservations,
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+      }
+
+      if (couponReference != null) {
+        final reservations = _reservationsFrom(
+          couponSnapshot?.data()?['reservations'],
+        );
+        final reservation = reservations[orderId];
+        if (reservation is! Map || reservation['customerId'] != customer.uid) {
+          throw StateError('ไม่พบการจองคูปองของคำสั่งซื้อนี้');
+        }
+        if (isExpired) {
+          reservations.remove(orderId);
+        } else {
+          reservations[orderId] = {
+            ...reservation,
+            'status': 'pendingSlipReview',
+            'expiresAt': null,
+          };
+        }
+        transaction.update(couponReference, {
           'reservations': reservations,
           'updatedAt': FieldValue.serverTimestamp(),
         });
@@ -323,6 +404,10 @@ class OrderService {
           entry.value.reference,
         );
       }
+      final couponReference = _couponReferenceFor(order);
+      final couponSnapshot = couponReference == null
+          ? null
+          : await transaction.get(couponReference);
       for (final entry in stockChanges.entries) {
         final snapshot = volumeSnapshots[entry.key]!;
         final volumeData = snapshot.data();
@@ -350,6 +435,24 @@ class OrderService {
           ..remove(orderId);
         transaction.update(entry.value.reference, {
           'stock': stock - entry.value.quantity,
+          'reservations': reservations,
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+      }
+      if (couponReference != null) {
+        final couponData = couponSnapshot?.data();
+        if (couponData == null || couponData['ownerId'] != owner.uid) {
+          throw StateError('ไม่พบคูปองของคำสั่งซื้อนี้');
+        }
+        final reservations = _reservationsFrom(couponData['reservations']);
+        final reservation = reservations[orderId];
+        if (reservation is! Map ||
+            reservation['status'] != 'pendingSlipReview') {
+          throw StateError('ไม่พบการจองคูปองของคำสั่งซื้อนี้');
+        }
+        reservations.remove(orderId);
+        transaction.update(couponReference, {
+          'usedCount': ((couponData['usedCount'] as num?)?.toInt() ?? 0) + 1,
           'reservations': reservations,
           'updatedAt': FieldValue.serverTimestamp(),
         });
@@ -390,6 +493,10 @@ class OrderService {
           entry.value.reference,
         );
       }
+      final couponReference = _couponReferenceFor(order);
+      final couponSnapshot = couponReference == null
+          ? null
+          : await transaction.get(couponReference);
       for (final entry in stockChanges.entries) {
         final volumeData = volumeSnapshots[entry.key]?.data();
         if (volumeData == null) {
@@ -405,6 +512,23 @@ class OrderService {
         }
         reservations.remove(orderId);
         transaction.update(entry.value.reference, {
+          'reservations': reservations,
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+      }
+      if (couponReference != null) {
+        final couponData = couponSnapshot?.data();
+        if (couponData == null || couponData['ownerId'] != owner.uid) {
+          throw StateError('ไม่พบคูปองของคำสั่งซื้อนี้');
+        }
+        final reservations = _reservationsFrom(couponData['reservations']);
+        final reservation = reservations[orderId];
+        if (reservation is! Map ||
+            reservation['status'] != 'pendingSlipReview') {
+          throw StateError('ไม่พบการจองคูปองของคำสั่งซื้อนี้');
+        }
+        reservations.remove(orderId);
+        transaction.update(couponReference, {
           'reservations': reservations,
           'updatedAt': FieldValue.serverTimestamp(),
         });
@@ -456,6 +580,14 @@ class OrderService {
       throw StateError('บัญชีนี้ไม่มีสิทธิ์จัดการคำสั่งซื้อ');
     }
     return owner;
+  }
+
+  DocumentReference<Map<String, dynamic>>? _couponReferenceFor(
+    OrderModel order,
+  ) {
+    final code = order.couponCode;
+    if (code == null || code.isEmpty) return null;
+    return _firestore.collection(couponsCollection).doc(code);
   }
 
   Map<String, _StockChange> _stockChangesForItems(List<OrderItem> items) {

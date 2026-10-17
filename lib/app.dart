@@ -15,6 +15,7 @@ import 'screens/chat/chat_list_screen.dart';
 import 'screens/customer/book_detail/book_detail_screen.dart';
 import 'screens/customer/book_list/book_list_screen.dart';
 import 'screens/customer/cart/cart_screen.dart';
+import 'screens/customer/coupons/customer_coupons_screen.dart';
 import 'screens/customer/checkout/checkout_screen.dart';
 import 'screens/customer/order_history/order_history_screen.dart';
 import 'screens/owner/book_manage/book_manage_form_screen.dart';
@@ -57,6 +58,7 @@ class MainApp extends StatelessWidget {
 				AppRoutes.customerCart: (_) => const CartScreen(),
 				AppRoutes.customerCheckout: (_) => const CheckoutScreen(),
 				AppRoutes.customerOrderHistory: (_) => const OrderHistoryScreen(),
+				AppRoutes.customerCoupons: (_) => const CustomerCouponsScreen(),
 				AppRoutes.ownerDashboard: (_) => const DashboardScreen(),
 				AppRoutes.ownerBooks: (_) => const BookManageListScreen(),
 				AppRoutes.ownerBookForm: (_) => const BookManageFormScreen(),

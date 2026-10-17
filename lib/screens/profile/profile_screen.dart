@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants/app_routes.dart';
+import '../../models/coupon_model.dart';
 import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/coupon_service.dart';
 import '../../widgets/feature_placeholder_screen.dart';
 import '../../widgets/navigation/customer_bottom_nav.dart';
 import '../../widgets/navigation/owner_bottom_nav.dart';
@@ -152,6 +154,12 @@ class ProfileScreen extends StatelessWidget {
                             AppRoutes.customerOrderHistory,
                           ),
                         ),
+                        _CouponMenuRow(
+                          onTap: () => Navigator.pushNamed(
+                            context,
+                            AppRoutes.customerCoupons,
+                          ),
+                        ),
                         _ProfileMenuRow(
                           icon: Icons.notifications_none,
                           title: 'การแจ้งเตือน',
@@ -262,6 +270,34 @@ class ProfileScreen extends StatelessWidget {
   }
 }
 
+// แถวเมนูคูปองของลูกค้า พร้อม badge จำนวนคูปองที่ใช้ได้
+class _CouponMenuRow extends StatefulWidget {
+  const _CouponMenuRow({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  State<_CouponMenuRow> createState() => _CouponMenuRowState();
+}
+
+class _CouponMenuRowState extends State<_CouponMenuRow> {
+  late final Stream<List<CouponModel>> _stream = CouponService()
+      .watchActiveCoupons();
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<List<CouponModel>>(
+      stream: _stream,
+      builder: (context, snapshot) => _ProfileMenuRow(
+        icon: Icons.local_offer_outlined,
+        title: 'คูปองของฉัน',
+        badgeCount: snapshot.data?.length ?? 0,
+        onTap: widget.onTap,
+      ),
+    );
+  }
+}
+
 class _ProfileMenuRow extends StatelessWidget {
   const _ProfileMenuRow({
     required this.icon,
@@ -269,6 +305,7 @@ class _ProfileMenuRow extends StatelessWidget {
     required this.onTap,
     this.color = const Color(0xFF303030),
     this.showChevron = true,
+    this.badgeCount = 0,
   });
 
   final IconData icon;
@@ -276,6 +313,7 @@ class _ProfileMenuRow extends StatelessWidget {
   final VoidCallback onTap;
   final Color color;
   final bool showChevron;
+  final int badgeCount;
 
   @override
   Widget build(BuildContext context) {
@@ -287,7 +325,16 @@ class _ProfileMenuRow extends StatelessWidget {
             onTap: onTap,
             child: Row(
               children: [
-                SizedBox(width: 56, child: Icon(icon, color: color, size: 28)),
+                SizedBox(
+                  width: 56,
+                  child: Badge(
+                    isLabelVisible: badgeCount > 0,
+                    label: Text('$badgeCount'),
+                    alignment: Alignment.topRight,
+                    offset: const Offset(-8, -4),
+                    child: Icon(icon, color: color, size: 28),
+                  ),
+                ),
                 Expanded(
                   child: Text(
                     title,
