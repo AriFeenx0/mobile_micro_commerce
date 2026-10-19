@@ -305,44 +305,40 @@ class _OrderCardState extends State<_OrderCard> {
           ],
           // แสดงปุ่มยืนยันและปฏิเสธเมื่อเจ้าของร้านกำลังตรวจสลิป
           if (widget.ownerView && isReviewing) ...[
-            const SizedBox(height: 12),
-            Row(
+            const SizedBox(height: 10),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: _isProcessing ? null : _rejectPayment,
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF555555),
-                      side: const BorderSide(color: Color(0xFF999999)),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(9),
-                      ),
+                FilledButton(
+                  onPressed: _isProcessing ? null : _confirmPayment,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF333333),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(9),
                     ),
-                    child: const Text('ปฏิเสธ'),
                   ),
+                  child: _isProcessing
+                      ? const SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('ยืนยันการชำระ'),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  flex: 5,
-                  child: FilledButton(
-                    onPressed: _isProcessing ? null : _confirmPayment,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFF333333),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(9),
-                      ),
+                const SizedBox(height: 8),
+                OutlinedButton(
+                  onPressed: _isProcessing ? null : _rejectPayment,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF555555),
+                    side: const BorderSide(color: Color(0xFF999999)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(9),
                     ),
-                    child: _isProcessing
-                        ? const SizedBox.square(
-                            dimension: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Text('ยืนยันการชำระ'),
                   ),
+                  child: const Text('ปฏิเสธ'),
                 ),
               ],
             ),
