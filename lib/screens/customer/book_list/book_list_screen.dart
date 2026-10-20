@@ -129,13 +129,6 @@ class _BookListScreenState extends State<BookListScreen> {
                   );
                 }
 
-                final categoryOptions = booksProvider.categories;
-                final selectedCategory =
-                    categoryOptions.contains(
-                      booksProvider.appliedFilters.category,
-                    )
-                    ? booksProvider.appliedFilters.category
-                    : 'ทั้งหมด';
                 final visibleBooks = booksProvider.visibleBooks;
 
                 return CustomScrollView(
@@ -231,51 +224,10 @@ class _BookListScreenState extends State<BookListScreen> {
                         ),
                       ),
                     ),
-                    SliverToBoxAdapter(
-                      child: SizedBox(
-                        height: 42,
-                        child: ListView.separated(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: horizontalPadding,
-                          ),
-                          scrollDirection: Axis.horizontal,
-                          itemCount: categoryOptions.length,
-                          separatorBuilder: (_, _) => const SizedBox(width: 8),
-                          itemBuilder: (context, index) {
-                            final category = categoryOptions[index];
-                            final isSelected = category == selectedCategory;
-                            return ChoiceChip(
-                              label: Text(category),
-                              selected: isSelected,
-                              onSelected: (_) =>
-                                  booksProvider.setCategory(category),
-                              showCheckmark: false,
-                              labelStyle: TextStyle(
-                                color: isSelected
-                                    ? Colors.white
-                                    : Colors.black87,
-                                fontSize: 15,
-                              ),
-                              backgroundColor: Colors.white,
-                              selectedColor: const Color(0xFF222222),
-                              side: BorderSide(
-                                color: isSelected
-                                    ? const Color(0xFF222222)
-                                    : const Color(0xFF777777),
-                              ),
-                              shape: const StadiumBorder(),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
                     SliverPadding(
                       padding: EdgeInsets.fromLTRB(
                         horizontalPadding,
-                        22,
+                        0,
                         horizontalPadding,
                         28,
                       ),
