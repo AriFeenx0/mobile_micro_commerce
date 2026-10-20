@@ -191,11 +191,16 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                       ],
                     ),
                     const SizedBox(height: 24),
-                    ExpansionTile(
-                      tilePadding: EdgeInsets.zero,
-                      expandedAlignment: Alignment.centerLeft,
-                      expandedCrossAxisAlignment: CrossAxisAlignment.start,
-                      title: const Text('รายละเอียดสินค้า'),
+                    const Text(
+                      'รายละเอียดสินค้า',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _BookField(
                           label: 'สำนักพิมพ์',
@@ -217,10 +222,6 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                           value: widget.book.category.isEmpty
                               ? '-'
                               : widget.book.category.join(', '),
-                        ),
-                        _BookField(
-                          label: 'รูปแบบหนังสือ',
-                          value: widget.book.isSet ? 'เป็นชุด' : 'เล่มเดี่ยว',
                         ),
                       ],
                     ),
@@ -420,16 +421,19 @@ class _BookField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.only(bottom: 18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label,
-            style: const TextStyle(color: Color(0xFF777777), fontSize: 12),
+            style: const TextStyle(color: Color(0xFF666666), fontSize: 15),
           ),
           const SizedBox(height: 4),
-          SelectableText(value, style: const TextStyle(fontSize: 15)),
+          SelectableText(
+            value,
+            style: const TextStyle(fontSize: 18, height: 1.4),
+          ),
         ],
       ),
     );
