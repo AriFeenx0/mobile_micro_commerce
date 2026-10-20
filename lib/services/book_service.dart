@@ -292,6 +292,16 @@ class BookService {
     final volumeSnapshot = await bookReference
         .collection(volumesCollection)
         .get();
+    final volumes = volumeSnapshot.docs
+        .map(
+          (document) =>
+              BookVolumeModel.fromJson(document.id, bookId, document.data()),
+        )
+        .toList();
+    if (volumes.any((volume) => volume.reservedQuantity > 0)) {
+      throw StateError('ไม่สามารถลบสินค้าที่มีรายการจองสต็อกอยู่ได้');
+    }
+
     final volumeReferences = volumeSnapshot.docs
         .map((document) => document.reference)
         .toList();
