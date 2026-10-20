@@ -7,9 +7,9 @@ import '../../models/coupon_model.dart';
 import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/coupon_service.dart';
-import '../../widgets/feature_placeholder_screen.dart';
 import '../../widgets/navigation/customer_bottom_nav.dart';
 import '../../widgets/navigation/owner_bottom_nav.dart';
+import 'shipping_address_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -143,8 +143,12 @@ class ProfileScreen extends StatelessWidget {
                         _ProfileMenuRow(
                           icon: Icons.location_on_outlined,
                           title: 'ที่อยู่จัดส่ง',
-                          onTap: () =>
-                              _showPlaceholder(context, 'ที่อยู่จัดส่ง'),
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute<void>(
+                              builder: (_) => const ShippingAddressScreen(),
+                            ),
+                          ),
                         ),
                         _ProfileMenuRow(
                           icon: Icons.receipt_long_outlined,
@@ -160,27 +164,7 @@ class ProfileScreen extends StatelessWidget {
                             AppRoutes.customerCoupons,
                           ),
                         ),
-                        _ProfileMenuRow(
-                          icon: Icons.notifications_none,
-                          title: 'การแจ้งเตือน',
-                          onTap: () =>
-                              _showPlaceholder(context, 'การแจ้งเตือน'),
-                        ),
-                        _ProfileMenuRow(
-                          icon: Icons.help_outline,
-                          title: 'ช่วยเหลือ / ติดต่อร้าน',
-                          onTap: () => _showPlaceholder(
-                            context,
-                            'ช่วยเหลือ / ติดต่อร้าน',
-                          ),
-                        ),
                       ] else ...[
-                        _ProfileMenuRow(
-                          icon: Icons.storefront_outlined,
-                          title: 'ข้อมูลร้านค้า',
-                          onTap: () =>
-                              _showPlaceholder(context, 'ข้อมูลร้านค้า'),
-                        ),
                         _ProfileMenuRow(
                           icon: Icons.account_balance_outlined,
                           title: 'บัญชีรับเงิน',
@@ -188,17 +172,6 @@ class ProfileScreen extends StatelessWidget {
                             context,
                             AppRoutes.payoutAccount,
                           ),
-                        ),
-                        _ProfileMenuRow(
-                          icon: Icons.notifications_none,
-                          title: 'การแจ้งเตือน',
-                          onTap: () =>
-                              _showPlaceholder(context, 'การแจ้งเตือน'),
-                        ),
-                        _ProfileMenuRow(
-                          icon: Icons.help_outline,
-                          title: 'ช่วยเหลือ',
-                          onTap: () => _showPlaceholder(context, 'ช่วยเหลือ'),
                         ),
                       ],
                       _ProfileMenuRow(
@@ -227,18 +200,6 @@ class ProfileScreen extends StatelessWidget {
                 ),
         );
       },
-    );
-  }
-
-  void _showPlaceholder(BuildContext context, String title) {
-    Navigator.push(
-      context,
-      MaterialPageRoute<void>(
-        builder: (_) => FeaturePlaceholderScreen(
-          title: title,
-          message: '$title ยังไม่พร้อมใช้งาน',
-        ),
-      ),
     );
   }
 
