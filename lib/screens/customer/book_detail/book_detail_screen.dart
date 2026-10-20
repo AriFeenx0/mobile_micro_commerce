@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/constants/app_routes.dart';
 import '../../../models/book_model.dart';
 import '../../../models/book_volume_model.dart';
 import '../../../providers/cart_provider.dart';
@@ -320,19 +319,16 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
       return;
     }
     final messenger = ScaffoldMessenger.of(context);
-    messenger.showSnackBar(
-      SnackBar(
-        duration: const Duration(seconds: 2),
-        content: const Text('เพิ่มสินค้าในตะกร้าแล้ว'),
-        action: SnackBarAction(
-          label: 'ดูตะกร้า',
-          onPressed: () {
-            messenger.hideCurrentSnackBar();
-            Navigator.pushNamed(context, AppRoutes.customerCart);
-          },
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(
+          duration: Duration(seconds: 5),
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.fromLTRB(24, 0, 24, 8),
+          content: Text('เพิ่มสินค้าในตะกร้าแล้ว'),
         ),
-      ),
-    );
+      );
   }
 }
 
