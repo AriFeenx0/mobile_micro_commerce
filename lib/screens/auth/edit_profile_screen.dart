@@ -15,7 +15,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
-  final _addressController = TextEditingController();
   bool _initialized = false;
   bool _saving = false;
 
@@ -27,7 +26,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (profile != null) {
       _nameController.text = profile.name;
       _phoneController.text = profile.phone;
-      _addressController.text = profile.address;
     }
     _initialized = true;
   }
@@ -36,7 +34,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
-    _addressController.dispose();
     super.dispose();
   }
 
@@ -70,17 +67,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 border: OutlineInputBorder(),
               ),
             ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _addressController,
-              minLines: 3,
-              maxLines: 5,
-              decoration: const InputDecoration(
-                labelText: 'ที่อยู่',
-                alignLabelWithHint: true,
-                border: OutlineInputBorder(),
-              ),
-            ),
             const SizedBox(height: 24),
             SizedBox(
               height: 52,
@@ -107,7 +93,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       await context.read<AuthProvider>().updateProfile(
         name: _nameController.text,
         phone: _phoneController.text,
-        address: _addressController.text,
+        address: context.read<AuthProvider>().profile?.address ?? '',
       );
       if (!mounted) return;
       ScaffoldMessenger.of(
