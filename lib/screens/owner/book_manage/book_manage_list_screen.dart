@@ -1,6 +1,7 @@
 // แสดงและจัดการหนังสือของเจ้าของร้าน
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../../core/constants/app_routes.dart';
 import '../../../models/book_model.dart';
@@ -27,6 +28,7 @@ class _BookManageListScreenState extends State<BookManageListScreen> {
   Future<UserModel?>? _profileFuture;
   String? _booksOwnerId;
   Stream<List<BookModel>>? _booksStream;
+  final _deletingBookIds = <String>{};
 
   @override
   void dispose() {
@@ -195,6 +197,8 @@ class _BookManageListScreenState extends State<BookManageListScreen> {
                         return _BookCard(
                           book: book,
                           onEdit: () => _editBook(book),
+                          isDeleting: _deletingBookIds.contains(book.id),
+                          onDelete: () => _confirmDeleteBook(book),
                         );
                       },
                     );
@@ -227,13 +231,77 @@ class _BookManageListScreenState extends State<BookManageListScreen> {
       MaterialPageRoute<bool>(builder: (_) => BookManageFormScreen(book: book)),
     );
   }
+
+  Future<void> _confirmDeleteBook(BookModel book) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('ลบสินค้า?'),
+        content: Text('ต้องการลบ “${book.title}” และข้อมูลเล่มทั้งหมดหรือไม่'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('ยกเลิก'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF333333),
+            ),
+            child: const Text('ลบสินค้า'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _deletingBookIds.add(book.id));
+    try {
+      await _bookService.deleteBook(book.id);
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(const SnackBar(content: Text('ลบสินค้าแล้ว')));
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(_deleteErrorMessage(error))));
+      }
+    } finally {
+      if (mounted) setState(() => _deletingBookIds.remove(book.id));
+    }
+  }
+
+  String _deleteErrorMessage(Object error) {
+    if (error is FirebaseException) {
+      debugPrint(
+        'Book delete Firebase error [${error.plugin}/${error.code}]: ${error.message}',
+      );
+      if (error.code == 'permission-denied') {
+        return 'ไม่มีสิทธิ์ลบสินค้า กรุณาตรวจสอบบัญชีเจ้าของร้าน';
+      }
+    } else {
+      debugPrint('Book delete error: $error');
+      if (error is StateError) return error.message;
+    }
+    return 'ลบสินค้าไม่สำเร็จ กรุณาลองใหม่';
+  }
 }
 
 class _BookCard extends StatefulWidget {
-  const _BookCard({required this.book, required this.onEdit});
+  const _BookCard({
+    required this.book,
+    required this.onEdit,
+    required this.isDeleting,
+    required this.onDelete,
+  });
 
   final BookModel book;
   final VoidCallback onEdit;
+  final bool isDeleting;
+  final VoidCallback onDelete;
 
   @override
   State<_BookCard> createState() => _BookCardState();
@@ -274,14 +342,45 @@ class _BookCardState extends State<_BookCard> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Expanded(
-                child: book.images.isEmpty
-                    ? const ColoredBox(color: Color(0xFFE1E1E1))
-                    : Image.network(
-                        book.images.first,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) =>
-                            const ColoredBox(color: Color(0xFFE1E1E1)),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                      book.images.isEmpty
+                          ? const ColoredBox(color: Color(0xFFE1E1E1))
+                          : Image.network(
+                              book.images.first,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, _, _) =>
+                                  const ColoredBox(color: Color(0xFFE1E1E1)),
+                            ),
+                      Positioned(
+                        top: 6,
+                        right: 6,
+                        child: Material(
+                          color: Colors.white.withValues(alpha: 0.92),
+                          shape: const CircleBorder(),
+                          child: widget.isDeleting
+                              ? const Padding(
+                                  padding: EdgeInsets.all(12),
+                                  child: SizedBox.square(
+                                    dimension: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                )
+                              : IconButton(
+                                  tooltip: 'ลบสินค้า',
+                                  onPressed: widget.onDelete,
+                                  icon: const Icon(
+                                    Icons.delete_outline,
+                                    color: Color(0xFFB3261E),
+                                  ),
+                                ),
+                        ),
                       ),
+                  ],
+                ),
               ),
               Padding(
                 padding: const EdgeInsets.all(10),
