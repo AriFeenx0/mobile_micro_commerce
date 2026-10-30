@@ -1,4 +1,4 @@
-// เลือกรูปสลิปและส่งคำสั่งซื้อเพื่อรอตรวจสอบ
+/// แสดงข้อมูลการชำระเงินและให้ลูกค้าส่งสลิปยืนยันคำสั่งซื้อ
 import 'dart:typed_data';
 
 import 'package:firebase_core/firebase_core.dart';
@@ -28,6 +28,7 @@ class SlipUploadScreen extends StatefulWidget {
   final bool clearCartOnSuccess;
   final bool usePromptPay;
 
+  /// สร้างสถานะสำหรับเลือกสลิปและส่งคำสั่งซื้อ
   @override
   State<SlipUploadScreen> createState() => _SlipUploadScreenState();
 }
@@ -41,6 +42,7 @@ class _SlipUploadScreenState extends State<SlipUploadScreen> {
   bool _isPicking = false;
   bool _isSubmitting = false;
 
+  /// แสดงข้อมูลบัญชีหรือ QR พร้อมเพย์ ช่องแนบสลิป และปุ่มส่ง
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -262,6 +264,7 @@ class _SlipUploadScreenState extends State<SlipUploadScreen> {
     );
   }
 
+  /// เลือกรูปสลิปจากแกลเลอรีและเตรียมข้อมูลสำหรับแสดงตัวอย่าง
   Future<void> _pickSlip() async {
     setState(() => _isPicking = true);
     try {
@@ -281,6 +284,7 @@ class _SlipUploadScreenState extends State<SlipUploadScreen> {
     }
   }
 
+  /// ส่งสลิป บันทึกสถานะคำสั่งซื้อ และกลับไปยังประวัติคำสั่งซื้อ
   Future<void> _submitOrder() async {
     final slipImage = _slipImage;
     if (slipImage == null || _isSubmitting) return;
@@ -315,12 +319,14 @@ class _SlipUploadScreenState extends State<SlipUploadScreen> {
     }
   }
 
+  /// แสดงข้อความแจ้งผลผ่าน SnackBar
   void _showMessage(String message) {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
+  /// จัดรูปแบบยอดชำระเป็นเงินบาทโดยตัดทศนิยมที่เป็นศูนย์
   String _formatPrice(double price) {
     final amount = price % 1 == 0
         ? price.toStringAsFixed(0)
@@ -328,6 +334,7 @@ class _SlipUploadScreenState extends State<SlipUploadScreen> {
     return '฿$amount';
   }
 
+  /// แปลงข้อผิดพลาด Firebase เป็นข้อความภาษาไทยสำหรับผู้ใช้
   String _firebaseErrorMessage(FirebaseException error) {
     debugPrint(
       'Order submission Firebase error [${error.plugin}/${error.code}]: '
@@ -350,6 +357,7 @@ class _SectionLabel extends StatelessWidget {
 
   final String title;
 
+  /// แสดงป้ายชื่อส่วนในหน้าชำระเงิน
   @override
   Widget build(BuildContext context) => Text(
     title,
@@ -358,6 +366,7 @@ class _SectionLabel extends StatelessWidget {
 }
 
 class _DashedBorderPainter extends CustomPainter {
+  /// วาดกรอบเส้นประรอบพื้นที่แนบสลิป
   @override
   void paint(Canvas canvas, Size size) {
     const radius = Radius.circular(14);
@@ -383,6 +392,7 @@ class _DashedBorderPainter extends CustomPainter {
     }
   }
 
+  /// ไม่วาดกรอบซ้ำเมื่อ painter เดิมยังใช้งานได้
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

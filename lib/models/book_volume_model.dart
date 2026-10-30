@@ -1,6 +1,7 @@
-// โมเดลสต็อกและรายละเอียดของหนังสือแต่ละเล่ม
+/// โมเดลสต็อก ราคา และสถานะการจองของหนังสือแต่ละเล่ม
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+/// เก็บข้อมูลของเล่มหนังสือและจำนวนสินค้าที่พร้อมขาย
 class BookVolumeModel {
   final String id; // volumeId
   final String bookId; // อ้างอิงกลับไป books/{bookId} (เก็บไว้สะดวกตอน query แบบ collectionGroup)
@@ -14,6 +15,7 @@ class BookVolumeModel {
   final String? lockedByOrderId;
   final DateTime? updatedAt;
 
+  /// สร้างข้อมูลเล่มหนังสือจากค่าที่กำหนด
   BookVolumeModel({
     required this.id,
     required this.bookId,
@@ -28,6 +30,7 @@ class BookVolumeModel {
     this.updatedAt,
   });
 
+  /// รวมจำนวนที่จองไว้ โดยไม่นับรายการชำระเงินที่หมดเวลาแล้ว
   int get reservedQuantity {
     final now = DateTime.now();
     return reservations.values.fold<int>(0, (total, reservation) {
@@ -44,6 +47,7 @@ class BookVolumeModel {
     });
   }
 
+  /// คืนจำนวนสต็อกที่ยังซื้อได้หลังหักการจองและการล็อกเล่ม
   int get availableStock {
     if (lockedUntil != null && lockedUntil!.isAfter(DateTime.now())) return 0;
     if (stock <= 0) return 0;
@@ -52,8 +56,10 @@ class BookVolumeModel {
     return available >= stock ? stock : available;
   }
 
+  /// ระบุว่ายังมีสต็อกพร้อมขายหรือไม่
   bool get isAvailable => availableStock > 0;
 
+  /// สร้างโมเดลจากข้อมูล Firestore พร้อมระบุรหัสหนังสือและรหัสเล่ม
   factory BookVolumeModel.fromJson(
     String id,
     String bookId,
@@ -77,6 +83,7 @@ class BookVolumeModel {
     );
   }
 
+  /// แปลงโมเดลเป็น Map สำหรับบันทึกข้อมูลเล่มลง Firestore
   Map<String, dynamic> toJson() {
     return {
       'volumeNumber': volumeNumber,

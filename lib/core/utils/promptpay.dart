@@ -1,8 +1,9 @@
-// สร้าง payload QR PromptPay (EMVCo / Thai QR Payment) แบบกำหนดยอดเงิน
+/// สร้าง payload QR PromptPay ตามรูปแบบ EMVCo และกำหนดยอดเงินได้
 class PromptPay {
+  /// ป้องกันการสร้างอินสแตนซ์ของคลาสยูทิลิตีนี้
   const PromptPay._();
 
-  // เบอร์โทร 10 หลัก, เลขบัตรประชาชน/นิติบุคคล 13 หลัก หรือ e-Wallet 15 หลัก
+  /// สร้าง payload จากหมายเลขรับเงิน และใส่ยอดเงินเมื่อระบุ [amount]
   static String payload(String id, {double? amount}) {
     final digits = id.replaceAll(RegExp(r'\D'), '');
     final String target;
@@ -32,10 +33,11 @@ class PromptPay {
     return body + _crc16(body);
   }
 
+  /// สร้างฟิลด์ EMVCo โดยเติมความยาวของแท็กและค่า
   static String _tlv(String tag, String value) =>
       '$tag${value.length.toString().padLeft(2, '0')}$value';
 
-  // CRC-16/CCITT-FALSE
+  /// คำนวณ checksum CRC-16/CCITT-FALSE ของ payload
   static String _crc16(String data) {
     var crc = 0xFFFF;
     for (final unit in data.codeUnits) {

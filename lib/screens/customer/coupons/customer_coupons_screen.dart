@@ -1,4 +1,4 @@
-// รายการคูปองที่ลูกค้าใช้ได้ตอนนี้ กดเพื่อคัดลอกโค้ดไปใช้ที่หน้าชำระเงิน
+/// แสดงคูปองที่ใช้งานได้และให้ลูกค้าคัดลอกรหัสไปใช้ตอนชำระเงิน
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -9,6 +9,7 @@ import '../../../services/coupon_service.dart';
 class CustomerCouponsScreen extends StatefulWidget {
   const CustomerCouponsScreen({super.key});
 
+  /// สร้างสถานะสำหรับติดตามรายการคูปอง
   @override
   State<CustomerCouponsScreen> createState() => _CustomerCouponsScreenState();
 }
@@ -17,6 +18,7 @@ class _CustomerCouponsScreenState extends State<CustomerCouponsScreen> {
   late final Stream<List<CouponModel>> _stream = CouponService()
       .watchActiveCoupons();
 
+  /// แสดงคูปองที่ใช้ได้ พร้อมสถานะโหลด ผิดพลาด หรือไม่มีรายการ
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -56,6 +58,7 @@ class _CouponCard extends StatelessWidget {
 
   final CouponModel coupon;
 
+  /// แสดงรายละเอียดคูปองและปุ่มคัดลอกรหัส
   @override
   Widget build(BuildContext context) {
     final discount = coupon.discountType == DiscountType.percent

@@ -1,4 +1,4 @@
-// จัดการข้อมูลหนังสือ เล่มย่อย และสต็อกผ่าน Firestore
+/// จัดการข้อมูลหนังสือ เล่มย่อย และสต็อกผ่าน Firestore
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
@@ -8,6 +8,7 @@ import '../models/book_volume_model.dart';
 import '../services/storage_service.dart';
 
 class BookService {
+  /// ตั้งค่าแหล่ง Firebase และบริการจัดเก็บภาพ โดยรองรับ dependency สำหรับทดสอบ
   BookService({
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
@@ -27,6 +28,7 @@ class BookService {
   CollectionReference<Map<String, dynamic>> get _books =>
       _firestore.collection(booksCollection);
 
+  /// ติดตามหนังสือทั้งหมดและเรียงตามวันที่สร้างจากใหม่ไปเก่า
   Stream<List<BookModel>> watchBooks() {
     return _books.snapshots().map((snapshot) {
       final books = snapshot.docs
@@ -41,6 +43,7 @@ class BookService {
     });
   }
 
+  /// ติดตามหนังสือของเจ้าของร้านที่ระบุและเรียงตามวันที่สร้าง
   Stream<List<BookModel>> watchBooksByOwner(String ownerId) {
     return _books.where('ownerId', isEqualTo: ownerId).snapshots().map((
       snapshot,
@@ -57,6 +60,7 @@ class BookService {
     });
   }
 
+  /// อ่านเล่มย่อยของหนังสือและเรียงตามหมายเลขเล่ม
   Future<List<BookVolumeModel>> getBookVolumes(String bookId) async {
     final snapshot = await _books
         .doc(bookId)
@@ -74,6 +78,7 @@ class BookService {
     return volumes;
   }
 
+  /// ติดตามเล่มย่อยของหนังสือและเรียงตามหมายเลขเล่ม
   Stream<List<BookVolumeModel>> watchBookVolumes(String bookId) {
     return _books.doc(bookId).collection(volumesCollection).snapshots().map((
       snapshot,
@@ -91,6 +96,7 @@ class BookService {
     });
   }
 
+  /// ตรวจสิทธิ์เจ้าของร้าน อัปโหลดภาพ และบันทึกหนังสือพร้อมเล่มย่อย
   Future<BookModel> createBook({
     required BookModel book,
     required List<BookVolumeModel> volumes,
@@ -154,6 +160,7 @@ class BookService {
     }
   }
 
+  /// ตรวจสิทธิ์ อัปเดตข้อมูลและเล่มย่อยโดยคงการจองสต็อกที่มีอยู่
   Future<BookModel> updateBook({
     required BookModel book,
     required List<BookVolumeModel> volumes,
@@ -277,6 +284,7 @@ class BookService {
     }
   }
 
+  /// ลบหนังสือและเล่มย่อยเมื่อไม่มีการจองสต็อกค้าง
   Future<void> deleteBook(String bookId) async {
     final owner = await _requireShopOwner();
     final bookReference = _books.doc(bookId);
@@ -317,6 +325,7 @@ class BookService {
     await bookReference.delete();
   }
 
+  /// ตรวจสอบว่าผู้ใช้ปัจจุบันเป็นเจ้าของร้านและคืนบัญชี Firebase
   Future<User> _requireShopOwner() async {
     final user = _auth.currentUser;
     if (user == null) throw StateError('กรุณาเข้าสู่ระบบก่อนจัดการหนังสือ');

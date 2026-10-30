@@ -1,4 +1,4 @@
-// แสดงประวัติคำสั่งซื้อของลูกค้า
+/// แสดงรายการคำสั่งซื้อที่เป็นของบัญชีลูกค้าที่เข้าสู่ระบบ
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -12,6 +12,7 @@ import '../../../widgets/order_list_content.dart';
 class OrderHistoryScreen extends StatelessWidget {
   const OrderHistoryScreen({super.key});
 
+  /// สร้างหน้าประวัติคำสั่งซื้อ
   @override
   Widget build(BuildContext context) {
     return Consumer<AuthProvider>(

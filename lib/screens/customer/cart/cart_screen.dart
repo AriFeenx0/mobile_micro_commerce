@@ -1,4 +1,4 @@
-// แสดงและปรับรายการสินค้าในตะกร้าก่อนสั่งซื้อ
+/// แสดงสินค้าในตะกร้าและให้ลูกค้าปรับจำนวนก่อนดำเนินการสั่งซื้อ
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -9,6 +9,7 @@ import '../../../widgets/navigation/customer_bottom_nav.dart';
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
 
+  /// แสดงรายการสินค้า ยอดรวม และปุ่มไปยังขั้นตอนชำระเงิน
   @override
   Widget build(BuildContext context) {
     return Consumer<CartProvider>(
@@ -93,6 +94,7 @@ class CartScreen extends StatelessWidget {
     );
   }
 
+  /// เปลี่ยนไปยังหน้าที่เลือกจากแถบนำทางลูกค้า
   void _navigate(BuildContext context, int index) {
     final route = switch (index) {
       0 => AppRoutes.customerBooks,
@@ -103,6 +105,7 @@ class CartScreen extends StatelessWidget {
     if (route != null) Navigator.pushReplacementNamed(context, route);
   }
 
+  /// จัดรูปแบบราคาเป็นเงินบาทโดยตัดทศนิยมที่เป็นศูนย์
   String _formatPrice(double price) {
     final amount = price % 1 == 0
         ? price.toStringAsFixed(0)
@@ -122,6 +125,7 @@ class _CartItemRow extends StatelessWidget {
   final VoidCallback onRemove;
   final ValueChanged<int> onQuantityChanged;
 
+  /// แสดงข้อมูลสินค้าในตะกร้า พร้อมปุ่มลบและปรับจำนวน
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -209,6 +213,7 @@ class _CartItemRow extends StatelessWidget {
     );
   }
 
+  /// จัดรูปแบบราคาของสินค้าเป็นเงินบาท
   String _formatPrice(double price) {
     final amount = price % 1 == 0
         ? price.toStringAsFixed(0)
@@ -223,6 +228,7 @@ class _CartQuantityButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback? onPressed;
 
+  /// แสดงปุ่มควบคุมจำนวนสินค้าในตะกร้า
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -244,6 +250,7 @@ class _EmptyCart extends StatelessWidget {
 
   final VoidCallback onBrowse;
 
+  /// แสดงข้อความตะกร้าว่างและปุ่มกลับไปเลือกหนังสือ
   @override
   Widget build(BuildContext context) {
     return Center(

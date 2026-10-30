@@ -1,4 +1,4 @@
-// แสดงออเดอร์ร้านและจัดการการตรวจสอบการชำระเงิน
+/// แสดงคำสั่งซื้อของร้านและจัดการการตรวจสอบการชำระเงิน
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -10,8 +10,10 @@ import '../../../services/order_service.dart';
 import '../../../widgets/order_list_content.dart';
 
 class OrderManageScreen extends StatefulWidget {
+  /// สร้างหน้าจัดการคำสั่งซื้อของเจ้าของร้าน
   const OrderManageScreen({super.key});
 
+  /// สร้างสถานะสำหรับหน้าจัดการคำสั่งซื้อ
   @override
   State<OrderManageScreen> createState() => _OrderManageScreenState();
 }
@@ -19,6 +21,7 @@ class OrderManageScreen extends StatefulWidget {
 class _OrderManageScreenState extends State<OrderManageScreen> {
   final _orderService = OrderService();
 
+  /// แสดงรายการคำสั่งซื้อและตรวจสอบสิทธิ์เจ้าของร้าน
   @override
   Widget build(BuildContext context) {
     return Consumer<AuthProvider>(

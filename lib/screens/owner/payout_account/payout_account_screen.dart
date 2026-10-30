@@ -1,4 +1,4 @@
-// หน้าจอให้เจ้าของร้านแก้ไขบัญชีธนาคารสำหรับรับเงินโอน
+/// ให้เจ้าของร้านจัดการบัญชีธนาคารสำหรับรับเงินโอน
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -7,8 +7,10 @@ import '../../../models/user_model.dart';
 import '../../../providers/auth_provider.dart';
 
 class PayoutAccountScreen extends StatefulWidget {
+  /// สร้างหน้าจอบัญชีรับเงินของเจ้าของร้าน
   const PayoutAccountScreen({super.key});
 
+  /// สร้างสถานะของหน้าจอบัญชีรับเงิน
   @override
   State<PayoutAccountScreen> createState() => _PayoutAccountScreenState();
 }
@@ -21,6 +23,7 @@ class _PayoutAccountScreenState extends State<PayoutAccountScreen> {
   bool _initialized = false;
   bool _saving = false;
 
+  /// เติมข้อมูลบัญชีเดิมลงในฟอร์มเมื่อโหลด dependencies ครั้งแรก
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -36,6 +39,7 @@ class _PayoutAccountScreenState extends State<PayoutAccountScreen> {
     _initialized = true;
   }
 
+  /// คืนทรัพยากรของช่องกรอกข้อมูลบัญชี
   @override
   void dispose() {
     _bankNameController.dispose();
@@ -44,6 +48,7 @@ class _PayoutAccountScreenState extends State<PayoutAccountScreen> {
     super.dispose();
   }
 
+  /// แสดงฟอร์มบัญชีรับเงินสำหรับเจ้าของร้าน
   @override
   Widget build(BuildContext context) {
     final profile = context.watch<AuthProvider>().profile;
@@ -123,9 +128,11 @@ class _PayoutAccountScreenState extends State<PayoutAccountScreen> {
     );
   }
 
+  /// สร้างตัวตรวจสอบว่าค่าที่กรอกไม่ว่าง
   String? Function(String?) _required(String message) =>
       (value) => value == null || value.trim().isEmpty ? message : null;
 
+  /// ตรวจสอบข้อมูลและบันทึกบัญชีรับเงินของเจ้าของร้าน
   Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     setState(() => _saving = true);

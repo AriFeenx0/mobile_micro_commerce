@@ -1,10 +1,11 @@
-// สร้าง จัดการ และตรวจคูปองผ่าน Firestore โดยใช้โค้ดคูปองเป็น Document ID
+/// สร้าง จัดการ และตรวจคูปองผ่าน Firestore โดยใช้โค้ดคูปองเป็น Document ID
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/coupon_model.dart';
 
 class CouponService {
+  /// ตั้งค่า Firestore และ Firebase Auth โดยรองรับ dependency สำหรับทดสอบ
   CouponService({FirebaseFirestore? firestore, FirebaseAuth? auth})
     : _firestore = firestore ?? FirebaseFirestore.instance,
       _auth = auth ?? FirebaseAuth.instance;
@@ -14,6 +15,7 @@ class CouponService {
   final FirebaseFirestore _firestore;
   final FirebaseAuth _auth;
 
+  /// อ้างอิงคอลเลกชันคูปอง
   CollectionReference<Map<String, dynamic>> get _coupons =>
       _firestore.collection(couponsCollection);
 
@@ -42,6 +44,7 @@ class CouponService {
   }
 
   /// คูปองที่ลูกค้าใช้ได้ตอนนี้ (เปิดใช้งาน ไม่หมดอายุ และโควต้ายังเหลือ)
+  /// ติดตามคูปองที่เปิดใช้งานและยังใช้ได้ในขณะนี้
   Stream<List<CouponModel>> watchActiveCoupons() {
     return _coupons.where('isActive', isEqualTo: true).snapshots().map((
       snapshot,
@@ -55,6 +58,7 @@ class CouponService {
     });
   }
 
+  /// ติดตามคูปองทั้งหมดของเจ้าของร้านโดยเรียงรายการใหม่ก่อน
   Stream<List<CouponModel>> watchCouponsForOwner(String ownerId) {
     return _coupons.where('ownerId', isEqualTo: ownerId).snapshots().map((
       snapshot,
@@ -70,6 +74,7 @@ class CouponService {
     });
   }
 
+  /// ตรวจข้อมูลและสิทธิ์ก่อนสร้างคูปองใหม่โดยไม่เขียนทับโค้ดเดิม
   Future<void> createCoupon({
     required String rawCode,
     required DiscountType discountType,
@@ -116,6 +121,7 @@ class CouponService {
     });
   }
 
+  /// เปิดหรือปิดคูปองที่เป็นของร้านผู้ใช้ปัจจุบัน
   Future<void> setActive(String code, bool isActive) async {
     final owner = await _requireShopOwner();
     final reference = _coupons.doc(code);
@@ -131,6 +137,7 @@ class CouponService {
     });
   }
 
+  /// ตรวจสอบว่าผู้ใช้ปัจจุบันเป็นเจ้าของร้านและคืนบัญชี Firebase
   Future<User> _requireShopOwner() async {
     final user = _auth.currentUser;
     if (user == null) throw StateError('กรุณาเข้าสู่ระบบก่อนจัดการคูปอง');

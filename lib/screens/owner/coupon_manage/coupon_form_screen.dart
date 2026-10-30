@@ -1,4 +1,4 @@
-// ฟอร์มสร้างคูปองใหม่ โดยโค้ดที่กรอกจะเป็น Document ID ของคูปอง
+/// ฟอร์มสร้างคูปองใหม่โดยใช้โค้ดคูปองเป็นรหัสเอกสาร
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -7,8 +7,10 @@ import '../../../models/coupon_model.dart';
 import '../../../services/coupon_service.dart';
 
 class CouponFormScreen extends StatefulWidget {
+  /// สร้างหน้าฟอร์มสำหรับสร้างคูปอง
   const CouponFormScreen({super.key});
 
+  /// สร้างสถานะของฟอร์มคูปอง
   @override
   State<CouponFormScreen> createState() => _CouponFormScreenState();
 }
@@ -24,6 +26,7 @@ class _CouponFormScreenState extends State<CouponFormScreen> {
   DateTime? _expiresAt;
   bool _saving = false;
 
+  /// คืนทรัพยากรของช่องกรอกข้อมูลคูปอง
   @override
   void dispose() {
     _codeController.dispose();
@@ -33,6 +36,7 @@ class _CouponFormScreenState extends State<CouponFormScreen> {
     super.dispose();
   }
 
+  /// แสดงฟอร์มกำหนดโค้ด ส่วนลด เงื่อนไข และวันหมดอายุของคูปอง
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -162,6 +166,7 @@ class _CouponFormScreenState extends State<CouponFormScreen> {
     );
   }
 
+  /// เลือกวันหมดอายุและกำหนดเวลาให้สิ้นสุดในวันนั้น
   Future<void> _pickExpiry() async {
     final now = DateTime.now();
     final picked = await showDatePicker(
@@ -184,6 +189,7 @@ class _CouponFormScreenState extends State<CouponFormScreen> {
     );
   }
 
+  /// ตรวจสอบข้อมูลและสร้างคูปองใหม่
   Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     setState(() => _saving = true);

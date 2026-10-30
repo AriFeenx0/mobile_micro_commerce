@@ -1,4 +1,4 @@
-// แสดงภาพรวมและรายการออเดอร์ล่าสุดของเจ้าของร้าน
+/// แสดงภาพรวม รายได้ คำสั่งซื้อล่าสุด และข้อความใหม่ของเจ้าของร้าน
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -13,8 +13,10 @@ import '../../../services/order_service.dart';
 import '../../../widgets/navigation/owner_bottom_nav.dart';
 
 class DashboardScreen extends StatelessWidget {
+  /// สร้างหน้าแดชบอร์ดของเจ้าของร้าน
   const DashboardScreen({super.key});
 
+  /// แสดงข้อมูลสรุปและรายการล่าสุดของร้าน
   @override
   Widget build(BuildContext context) {
     return Consumer<AuthProvider>(
@@ -198,11 +200,13 @@ class DashboardScreen extends StatelessWidget {
 }
 
 class _RecentOrderRow extends StatefulWidget {
+  /// สร้างแถวสรุปคำสั่งซื้อพร้อมการดำเนินการเมื่อแตะ
   const _RecentOrderRow({super.key, required this.order, required this.onTap});
 
   final OrderModel order;
   final VoidCallback onTap;
 
+  /// สร้างสถานะสำหรับโหลดข้อมูลลูกค้าของคำสั่งซื้อ
   @override
   State<_RecentOrderRow> createState() => _RecentOrderRowState();
 }
@@ -211,12 +215,14 @@ class _RecentOrderRowState extends State<_RecentOrderRow> {
   final _authService = AuthService();
   late Future<UserModel?> _customerProfile;
 
+  /// โหลดโปรไฟล์ลูกค้าเมื่อแถวถูกสร้าง
   @override
   void initState() {
     super.initState();
     _loadCustomerProfile();
   }
 
+  /// โหลดโปรไฟล์อีกครั้งเมื่อคำสั่งซื้อเปลี่ยนเป็นของลูกค้ารายอื่น
   @override
   void didUpdateWidget(covariant _RecentOrderRow oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -225,10 +231,12 @@ class _RecentOrderRowState extends State<_RecentOrderRow> {
     }
   }
 
+  /// ดึงโปรไฟล์ลูกค้าของคำสั่งซื้อปัจจุบัน
   void _loadCustomerProfile() {
     _customerProfile = _authService.getUserProfile(widget.order.customerId);
   }
 
+  /// แสดงชื่อลูกค้า รายการสินค้า และสถานะคำสั่งซื้อ
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<UserModel?>(
@@ -254,10 +262,12 @@ class _RecentOrderRowState extends State<_RecentOrderRow> {
 }
 
 class _UnreadMessagesSection extends StatefulWidget {
+  /// สร้างส่วนแสดงข้อความที่ยังไม่ได้อ่านของเจ้าของร้าน
   const _UnreadMessagesSection({required this.ownerId});
 
   final String ownerId;
 
+  /// สร้างสถานะสำหรับติดตามห้องสนทนาของเจ้าของร้าน
   @override
   State<_UnreadMessagesSection> createState() => _UnreadMessagesSectionState();
 }
@@ -266,6 +276,7 @@ class _UnreadMessagesSectionState extends State<_UnreadMessagesSection> {
   late final Stream<List<ChatRoomModel>> _rooms = ChatService()
       .watchRoomsForUser(widget.ownerId);
 
+  /// แสดงห้องที่มีข้อความใหม่เรียงตามเวลาข้อความล่าสุด
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<ChatRoomModel>>(
@@ -303,6 +314,7 @@ class _UnreadMessagesSectionState extends State<_UnreadMessagesSection> {
 }
 
 class _UnreadMessageRow extends StatefulWidget {
+  /// สร้างแถวสรุปข้อความใหม่จากลูกค้า
   const _UnreadMessageRow({
     super.key,
     required this.room,
@@ -312,6 +324,7 @@ class _UnreadMessageRow extends StatefulWidget {
   final ChatRoomModel room;
   final String ownerId;
 
+  /// สร้างสถานะสำหรับโหลดโปรไฟล์ผู้ส่งข้อความ
   @override
   State<_UnreadMessageRow> createState() => _UnreadMessageRowState();
 }
@@ -324,6 +337,7 @@ class _UnreadMessageRowState extends State<_UnreadMessageRow> {
     ),
   );
 
+  /// แสดงชื่อผู้ส่งและข้อความล่าสุดที่ยังไม่ได้อ่าน
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<UserModel?>(
@@ -342,11 +356,13 @@ class _UnreadMessageRowState extends State<_UnreadMessageRow> {
 }
 
 class _MetricPanel extends StatelessWidget {
+  /// สร้างแผงแสดงชื่อและค่าของตัวชี้วัด
   const _MetricPanel({required this.label, required this.value});
 
   final String label;
   final String value;
 
+  /// แสดงค่าตัวชี้วัดในรูปแบบแผงสรุป
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -384,6 +400,7 @@ class _MetricPanel extends StatelessWidget {
 }
 
 class _ActionButton extends StatelessWidget {
+  /// สร้างปุ่มดำเนินการพร้อมข้อความและไอคอนเสริม
   const _ActionButton({
     required this.label,
     required this.onPressed,
@@ -394,6 +411,7 @@ class _ActionButton extends StatelessWidget {
   final VoidCallback onPressed;
   final IconData? icon;
 
+  /// แสดงปุ่มที่เรียกการดำเนินการที่ได้รับ
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -414,10 +432,12 @@ class _ActionButton extends StatelessWidget {
 }
 
 class _SectionHeading extends StatelessWidget {
+  /// สร้างหัวข้อสำหรับส่วนข้อมูลในแดชบอร์ด
   const _SectionHeading(this.title);
 
   final String title;
 
+  /// แสดงหัวข้อส่วนด้วยรูปแบบตัวอักษรของแดชบอร์ด
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -431,6 +451,7 @@ class _SectionHeading extends StatelessWidget {
 }
 
 class _DashboardRow extends StatelessWidget {
+  /// สร้างแถวข้อมูลพร้อมสถานะและการดำเนินการเสริม
   const _DashboardRow({
     required this.title,
     this.onTap,
@@ -443,6 +464,7 @@ class _DashboardRow extends StatelessWidget {
   final bool unread;
   final VoidCallback? onTap;
 
+  /// แสดงข้อความ แถบข้อมูลเสริม และตัวบอกข้อความที่ยังไม่อ่าน
   @override
   Widget build(BuildContext context) {
     return InkWell(

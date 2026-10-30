@@ -1,10 +1,11 @@
-// จัดการการเข้าสู่ระบบและโปรไฟล์ผู้ใช้ผ่าน Firebase
+/// จัดการการเข้าสู่ระบบและโปรไฟล์ผู้ใช้ผ่าน Firebase
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/user_model.dart';
 
 class AuthService {
+  /// ตั้งค่าแหล่ง Firebase โดยรองรับการส่ง dependency เข้ามาทดสอบ
   AuthService({FirebaseAuth? firebaseAuth, FirebaseFirestore? firestore})
     : _auth = firebaseAuth ?? FirebaseAuth.instance,
       _firestore = firestore ?? FirebaseFirestore.instance;
@@ -14,13 +15,17 @@ class AuthService {
   final FirebaseAuth _auth;
   final FirebaseFirestore _firestore;
 
+  /// คอลเลกชัน Firestore ที่เก็บโปรไฟล์ผู้ใช้
   CollectionReference<Map<String, dynamic>> get _users =>
       _firestore.collection(usersCollection);
 
+  /// ผู้ใช้ Firebase ที่กำลังเข้าสู่ระบบ
   User? get currentFirebaseUser => _auth.currentUser;
 
+  /// สตรีมการเปลี่ยนแปลงสถานะการเข้าสู่ระบบ
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
+  /// สร้างบัญชี Firebase และบันทึกโปรไฟล์ลูกค้าใน Firestore
   Future<UserModel> registerWithEmailAndPassword({
     required String email,
     required String password,
@@ -57,6 +62,7 @@ class AuthService {
     return user;
   }
 
+  /// เข้าสู่ระบบและคืนโปรไฟล์ Firestore หรือข้อมูลพื้นฐานจาก Firebase
   Future<UserModel> signInWithEmailAndPassword({
     required String email,
     required String password,
@@ -74,6 +80,7 @@ class AuthService {
         _userModelFromFirebaseUser(firebaseUser);
   }
 
+  /// อ่านโปรไฟล์ของผู้ใช้ที่กำลังเข้าสู่ระบบ
   Future<UserModel?> getCurrentUserProfile() async {
     final firebaseUser = _auth.currentUser;
     if (firebaseUser == null) return null;
@@ -82,6 +89,7 @@ class AuthService {
         _userModelFromFirebaseUser(firebaseUser);
   }
 
+  /// อ่านโปรไฟล์จาก Firestore ด้วยรหัสผู้ใช้
   Future<UserModel?> getUserProfile(String uid) async {
     final document = await _users.doc(uid).get();
     final data = document.data();
@@ -90,6 +98,7 @@ class AuthService {
     return UserModel.fromJson(document.id, data);
   }
 
+  /// บันทึกชื่อ เบอร์โทร และที่อยู่ของผู้ใช้ปัจจุบัน
   Future<UserModel> updateCurrentUserProfile({
     required String name,
     required String phone,
@@ -116,6 +125,7 @@ class AuthService {
     return updatedProfile;
   }
 
+  /// อัปเดตบัญชีรับเงินของเจ้าของร้านที่เข้าสู่ระบบ
   Future<UserModel> updateBankAccount({
     required String bankName,
     required String accountNumber,
@@ -142,11 +152,14 @@ class AuthService {
     return updatedProfile;
   }
 
+  /// ส่งอีเมลสำหรับตั้งรหัสผ่านใหม่
   Future<void> sendPasswordResetEmail(String email) =>
       _auth.sendPasswordResetEmail(email: email.trim());
 
+  /// ออกจากระบบ Firebase
   Future<void> signOut() => _auth.signOut();
 
+  /// สร้างโปรไฟล์ลูกค้าพื้นฐานจากข้อมูล Firebase Auth
   UserModel _userModelFromFirebaseUser(User firebaseUser) => UserModel(
     id: firebaseUser.uid,
     name: firebaseUser.displayName ?? '',

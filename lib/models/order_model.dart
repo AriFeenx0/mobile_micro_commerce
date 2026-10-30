@@ -1,6 +1,7 @@
-// โมเดลรายการและสถานะคำสั่งซื้อสำหรับ Firestore
+/// โมเดลรายการสินค้า สถานะ และข้อมูลคำสั่งซื้อสำหรับ Firestore
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+/// สถานะการชำระเงินและจัดส่งของคำสั่งซื้อ
 enum OrderStatus {
   pendingPayment, // รอชำระเงิน
   pendingSlipReview, // รอตรวจสอบสลิป
@@ -9,6 +10,7 @@ enum OrderStatus {
   cancelled, // ยกเลิก
 }
 
+/// แปลงข้อความสถานะที่จัดเก็บเป็นค่า [OrderStatus]
 OrderStatus _statusFromString(String value) {
   switch (value) {
     case 'รอตรวจสอบสลิป':
@@ -25,6 +27,7 @@ OrderStatus _statusFromString(String value) {
   }
 }
 
+/// แปลงสถานะคำสั่งซื้อเป็นข้อความสำหรับแสดงผลและจัดเก็บ
 String orderStatusToString(OrderStatus status) {
   switch (status) {
     case OrderStatus.pendingSlipReview:
@@ -40,6 +43,7 @@ String orderStatusToString(OrderStatus status) {
   }
 }
 
+/// เก็บรายละเอียดหนังสือและจำนวนที่สั่งซื้อในรายการหนึ่ง
 class OrderItem {
   final String bookId;
   final String volumeId;
@@ -48,6 +52,7 @@ class OrderItem {
   final double price;
   final int qty;
 
+  /// สร้างรายการสินค้าในคำสั่งซื้อ
   OrderItem({
     required this.bookId,
     required this.volumeId,
@@ -57,6 +62,7 @@ class OrderItem {
     required this.qty,
   });
 
+  /// สร้างรายการสินค้าจาก Map ของคำสั่งซื้อ
   factory OrderItem.fromJson(Map<String, dynamic> json) {
     return OrderItem(
       bookId: json['bookId'] as String? ?? '',
@@ -68,6 +74,7 @@ class OrderItem {
     );
   }
 
+  /// แปลงรายการสินค้าเป็น Map สำหรับจัดเก็บในคำสั่งซื้อ
   Map<String, dynamic> toJson() {
     return {
       'bookId': bookId,
@@ -80,6 +87,7 @@ class OrderItem {
   }
 }
 
+/// เก็บข้อมูลผู้ซื้อ รายการสินค้า การชำระเงิน และการจัดส่ง
 class OrderModel {
   final String id;
   final String customerId;
@@ -100,6 +108,7 @@ class OrderModel {
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
+  /// สร้างโมเดลคำสั่งซื้อจากค่าที่กำหนด
   OrderModel({
     required this.id,
     required this.customerId,
@@ -121,6 +130,7 @@ class OrderModel {
     this.updatedAt,
   });
 
+  /// สร้างโมเดลคำสั่งซื้อจากข้อมูล Firestore
   factory OrderModel.fromJson(String id, Map<String, dynamic> json) {
     return OrderModel(
       id: id,
@@ -146,6 +156,7 @@ class OrderModel {
     );
   }
 
+  /// แปลงคำสั่งซื้อเป็น Map สำหรับบันทึกลง Firestore
   Map<String, dynamic> toJson() {
     return {
       'customerId': customerId,

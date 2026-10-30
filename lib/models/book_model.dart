@@ -1,6 +1,7 @@
-// โมเดลหนังสือและแปลงข้อมูลสำหรับจัดเก็บใน Firestore
+/// โมเดลข้อมูลหนังสือและการแปลงข้อมูลสำหรับจัดเก็บใน Firestore
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+/// เก็บข้อมูลหนังสือหลักที่ไม่ผูกกับสต็อกของแต่ละเล่ม
 class BookModel {
   final String id;
   final String title;
@@ -17,6 +18,7 @@ class BookModel {
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
+  /// สร้างโมเดลหนังสือจากค่าที่กำหนด
   BookModel({
     required this.id,
     required this.title,
@@ -34,6 +36,7 @@ class BookModel {
     this.updatedAt,
   });
 
+  /// สร้างโมเดลจากข้อมูล Firestore โดยใช้ [id] เป็น Document ID
   factory BookModel.fromJson(String id, Map<String, dynamic> json) {
     return BookModel(
       id: id,
@@ -53,6 +56,7 @@ class BookModel {
     );
   }
 
+  /// แปลงโมเดลเป็น Map สำหรับบันทึกลง Firestore
   Map<String, dynamic> toJson() {
     return {
       'title': title,

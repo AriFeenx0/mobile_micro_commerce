@@ -1,4 +1,4 @@
-// อัปโหลดรูปแชท สลิป และภาพหนังสือไปยัง Cloudinary
+/// อัปโหลดรูปแชท สลิป และภาพหนังสือไปยัง Cloudinary
 import 'dart:async';
 import 'dart:convert';
 
@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import '../core/constants/cloudinary_config.dart';
 
 class StorageService {
+  /// อัปโหลดภาพแชทพร้อมระบุผู้ส่งและผู้ร่วมสนทนา
   Future<String> uploadChatImage({
     required String customerId,
     required String ownerId,
@@ -64,6 +65,7 @@ class StorageService {
     }
   }
 
+  /// อัปโหลดสลิปการชำระเงินพร้อมผูกกับคำสั่งซื้อ
   Future<String> uploadOrderSlip({
     required String customerId,
     required String orderId,
@@ -118,6 +120,7 @@ class StorageService {
     }
   }
 
+  /// อัปโหลดภาพหนังสือทีละไฟล์และคืน URL ตามลำดับเดิม
   Future<List<String>> uploadBookImages({
     required String ownerId,
     required String bookId,
@@ -178,12 +181,14 @@ class StorageService {
     return urls;
   }
 
+  /// แปลงชื่อไฟล์ให้ปลอดภัยและกำหนดชื่อสำรองเมื่อไม่มีชื่อ
   String _safeFilename(String filename, int index) {
     final basename = filename.split(RegExp(r'[/\\]')).last.trim();
     if (basename.isEmpty) return 'book_image_$index.jpg';
     return basename.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
   }
 
+  /// แปลงเนื้อหาตอบกลับ JSON หรือคืนแผนที่ว่างเมื่อรูปแบบไม่ถูกต้อง
   Map<String, dynamic> _decodeResponse(String body) {
     try {
       final decoded = jsonDecode(body);
@@ -195,5 +200,6 @@ class StorageService {
 }
 
 class CloudinaryUploadException extends StateError {
+  /// สร้างข้อผิดพลาดที่อธิบายสาเหตุการอัปโหลด Cloudinary ไม่สำเร็จ
   CloudinaryUploadException(super.message);
 }

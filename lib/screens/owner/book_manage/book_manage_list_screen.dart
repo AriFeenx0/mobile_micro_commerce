@@ -1,4 +1,4 @@
-// แสดงและจัดการหนังสือของเจ้าของร้าน
+/// แสดง ค้นหา และจัดการหนังสือของเจ้าของร้าน
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -13,8 +13,10 @@ import '../../../widgets/navigation/owner_bottom_nav.dart';
 import 'book_manage_form_screen.dart';
 
 class BookManageListScreen extends StatefulWidget {
+  /// สร้างหน้ารายการหนังสือของเจ้าของร้าน
   const BookManageListScreen({super.key});
 
+  /// สร้างสถานะของหน้ารายการหนังสือ
   @override
   State<BookManageListScreen> createState() => _BookManageListScreenState();
 }
@@ -30,12 +32,14 @@ class _BookManageListScreenState extends State<BookManageListScreen> {
   Stream<List<BookModel>>? _booksStream;
   final _deletingBookIds = <String>{};
 
+  /// คืนทรัพยากรของช่องค้นหา
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
   }
 
+  /// ตรวจสอบบัญชีเจ้าของร้านและแสดงรายการหนังสือ
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<User?>(
@@ -89,6 +93,7 @@ class _BookManageListScreenState extends State<BookManageListScreen> {
     );
   }
 
+  /// สร้างหน้ารายการและผลการค้นหาหนังสือของเจ้าของร้าน
   Widget _buildBookList(String ownerId) {
     return Scaffold(
       backgroundColor: Colors.white,
@@ -225,6 +230,7 @@ class _BookManageListScreenState extends State<BookManageListScreen> {
     );
   }
 
+  /// เปิดฟอร์มแก้ไขหนังสือที่เลือก
   Future<void> _editBook(BookModel book) async {
     await Navigator.push<bool>(
       context,
@@ -232,6 +238,7 @@ class _BookManageListScreenState extends State<BookManageListScreen> {
     );
   }
 
+  /// ขอการยืนยันก่อนลบหนังสือและข้อมูลเล่มทั้งหมด
   Future<void> _confirmDeleteBook(BookModel book) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -274,6 +281,7 @@ class _BookManageListScreenState extends State<BookManageListScreen> {
     }
   }
 
+  /// แปลงข้อผิดพลาดจากการลบหนังสือเป็นข้อความแจ้งผู้ใช้
   String _deleteErrorMessage(Object error) {
     if (error is FirebaseException) {
       debugPrint(
@@ -291,6 +299,7 @@ class _BookManageListScreenState extends State<BookManageListScreen> {
 }
 
 class _BookCard extends StatefulWidget {
+  /// สร้างการ์ดหนังสือพร้อมการแก้ไขและลบ
   const _BookCard({
     required this.book,
     required this.onEdit,
@@ -303,6 +312,7 @@ class _BookCard extends StatefulWidget {
   final bool isDeleting;
   final VoidCallback onDelete;
 
+  /// สร้างสถานะสำหรับติดตามสต็อกของหนังสือ
   @override
   State<_BookCard> createState() => _BookCardState();
 }
@@ -311,12 +321,14 @@ class _BookCardState extends State<_BookCard> {
   final _bookService = BookService();
   late Stream<List<BookVolumeModel>> _volumesStream;
 
+  /// เริ่มติดตามสต็อกของหนังสือในการ์ด
   @override
   void initState() {
     super.initState();
     _volumesStream = _bookService.watchBookVolumes(widget.book.id);
   }
 
+  /// เปลี่ยนสตรีมสต็อกเมื่อการ์ดได้รับหนังสือคนละรายการ
   @override
   void didUpdateWidget(covariant _BookCard oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -325,6 +337,7 @@ class _BookCardState extends State<_BookCard> {
     }
   }
 
+  /// แสดงรายละเอียดหนังสือและจำนวนสต็อกปัจจุบัน
   @override
   Widget build(BuildContext context) {
     final book = widget.book;
@@ -470,6 +483,7 @@ class _BookCardState extends State<_BookCard> {
 }
 
 class _ListStatePage extends StatelessWidget {
+  /// สร้างหน้าสถานะรายการพร้อมตัวเลือกแสดงการโหลดหรือปุ่ม
   const _ListStatePage({
     required this.message,
     this.loading = false,
@@ -482,6 +496,7 @@ class _ListStatePage extends StatelessWidget {
   final String? actionLabel;
   final VoidCallback? onAction;
 
+  /// แสดงข้อความสถานะและองค์ประกอบเสริมที่กำหนด
   @override
   Widget build(BuildContext context) {
     return Scaffold(

@@ -1,11 +1,12 @@
-// แสดงรายการคำสั่งซื้อและปุ่มจัดการตามบทบาท
+/// แสดงรายการคำสั่งซื้อและปุ่มจัดการตามบทบาท
 import 'package:flutter/material.dart';
 
 import '../models/order_model.dart';
 import '../screens/customer/checkout/slip_upload_screen.dart';
 
+/// แสดงรายการออเดอร์พร้อมตัวกรองและการจัดการชำระเงินตามบทบาท
 class OrderListContent extends StatefulWidget {
-  // รับรายการออเดอร์ รูปแบบการแสดงผล และ callback สำหรับจัดการการชำระเงิน
+  /// รับรายการออเดอร์ รูปแบบการแสดงผล และ callback สำหรับจัดการการชำระเงิน
   const OrderListContent({
     super.key,
     required this.orders,
@@ -22,15 +23,17 @@ class OrderListContent extends StatefulWidget {
   final Future<void> Function(OrderModel order)? onConfirmPayment;
   final Future<void> Function(OrderModel order)? onRejectPayment;
 
-  // สร้าง state สำหรับจำตัวกรองสถานะที่ผู้ใช้เลือก
+  /// สร้าง state สำหรับจำตัวกรองสถานะที่ผู้ใช้เลือก
   @override
   State<OrderListContent> createState() => _OrderListContentState();
 }
 
+/// เก็บตัวกรองที่เลือกและสร้างรายการออเดอร์
 class _OrderListContentState extends State<OrderListContent> {
   // null หมายถึงแสดงทุกสถานะ
   OrderStatus? _selectedStatus;
 
+  /// สร้างรายการออเดอร์และตัวกรองที่เกี่ยวข้องกับมุมมองปัจจุบัน
   @override
   Widget build(BuildContext context) {
     // กรองออเดอร์ตามสถานะที่เลือก ก่อนนำไปแสดงในรายการ
@@ -68,7 +71,7 @@ class _OrderListContentState extends State<OrderListContent> {
     );
   }
 
-  // สร้างชิปตัวกรองสถานะ พร้อมจำนวนออเดอร์ที่รอตรวจสลิป
+  /// สร้างชิปตัวกรองสถานะ พร้อมจำนวนออเดอร์ที่รอตรวจสลิป
   Widget _buildFilters() {
     final pendingCount = widget.orders
         .where((order) => order.status == OrderStatus.pendingSlipReview)
@@ -116,9 +119,9 @@ class _OrderListContentState extends State<OrderListContent> {
   }
 }
 
-// การ์ดข้อมูลออเดอร์หนึ่งรายการ พร้อมข้อมูลและปุ่มตามบทบาทผู้ใช้งาน
+/// การ์ดออเดอร์พร้อมข้อมูลและปุ่มตามบทบาทผู้ใช้งาน
 class _OrderCard extends StatefulWidget {
-  // รับออเดอร์ รูปแบบมุมมอง และ callback สำหรับการตรวจสอบการชำระเงิน
+  /// รับออเดอร์ รูปแบบมุมมอง และ callback สำหรับการตรวจสอบการชำระเงิน
   const _OrderCard({
     required this.order,
     required this.ownerView,
@@ -132,16 +135,17 @@ class _OrderCard extends StatefulWidget {
   final Future<void> Function(OrderModel order)? onConfirmPayment;
   final Future<void> Function(OrderModel order)? onRejectPayment;
 
-  // ใช้ state ภายในจัดการสถานะกำลังดำเนินการของปุ่ม
+  /// สร้าง state ภายในเพื่อจัดการสถานะการทำงานของปุ่ม
   @override
   State<_OrderCard> createState() => _OrderCardState();
 }
 
+/// จัดการการกระทำในออเดอร์และสถานะการทำงานของปุ่ม
 class _OrderCardState extends State<_OrderCard> {
   // ป้องกันการกดปุ่มยืนยันหรือปฏิเสธซ้ำระหว่างรอ callback
   bool _isProcessing = false;
 
-  // เลือกสีเส้นขอบของการ์ดให้สอดคล้องกับสถานะออเดอร์
+  /// คืนค่าสีเส้นขอบของการ์ดตามสถานะออเดอร์
   Color _statusBorderColor(OrderStatus status) => switch (status) {
     OrderStatus.pendingPayment ||
     OrderStatus.pendingSlipReview => const Color(0xFFE9BE58),
@@ -150,7 +154,7 @@ class _OrderCardState extends State<_OrderCard> {
     OrderStatus.cancelled => const Color(0xFFDDDDDD),
   };
 
-  // แสดงรหัสท้าย 4 ตัวเพื่อให้อ่านง่ายและไม่แสดงรหัสเต็ม
+  /// คืนรหัสตัวพิมพ์ใหญ่ 4 ตัวท้าย หรือรหัสทั้งหมดเมื่อสั้นกว่านั้น
   String _shortId(String id) {
     final normalized = id.toUpperCase();
     return normalized.length <= 4
@@ -158,7 +162,7 @@ class _OrderCardState extends State<_OrderCard> {
         : normalized.substring(normalized.length - 4);
   }
 
-  // จัดรูปแบบราคาเป็นเงินบาท โดยไม่แสดงทศนิยมเมื่อเป็นจำนวนเต็ม
+  /// จัดรูปแบบราคาเป็นเงินบาท โดยไม่แสดงทศนิยมเมื่อเป็นจำนวนเต็ม
   String _formatPrice(double price) {
     final amount = price % 1 == 0
         ? price.toStringAsFixed(0)
@@ -166,6 +170,7 @@ class _OrderCardState extends State<_OrderCard> {
     return '฿$amount';
   }
 
+  /// สร้างการ์ดออเดอร์และปุ่มที่สอดคล้องกับบทบาทและสถานะ
   @override
   Widget build(BuildContext context) {
     final order = widget.order;
@@ -375,7 +380,7 @@ class _OrderCardState extends State<_OrderCard> {
     );
   }
 
-  // ขอคำยืนยันจากเจ้าของร้านก่อนเรียก callback เพื่อบันทึกการชำระและตัดสต็อก
+  /// ขอคำยืนยันก่อนเรียก callback เพื่อบันทึกการชำระและตัดสต็อก
   Future<void> _confirmPayment() async {
     final callback = widget.onConfirmPayment;
     if (callback == null) return;
@@ -402,7 +407,7 @@ class _OrderCardState extends State<_OrderCard> {
     await _runAction(callback, successMessage: 'ยืนยันชำระเงินและตัดสต็อกแล้ว');
   }
 
-  // ขอคำยืนยันก่อนปฏิเสธสลิป ซึ่งจะยกเลิกออเดอร์ตามข้อความแจ้งเตือน
+  /// ขอคำยืนยันก่อนเรียก callback เพื่อปฏิเสธสลิป
   Future<void> _rejectPayment() async {
     final callback = widget.onRejectPayment;
     if (callback == null) return;
@@ -427,7 +432,7 @@ class _OrderCardState extends State<_OrderCard> {
     await _runAction(callback, successMessage: 'ปฏิเสธสลิปแล้ว');
   }
 
-  // เรียกงานยืนยัน/ปฏิเสธ แสดงผลสำเร็จหรือข้อผิดพลาด และคืนสถานะปุ่ม
+  /// เรียกการจัดการออเดอร์และแจ้งผลสำเร็จหรือข้อผิดพลาด
   Future<void> _runAction(
     Future<void> Function(OrderModel order) action, {
     required String successMessage,
@@ -443,7 +448,7 @@ class _OrderCardState extends State<_OrderCard> {
     }
   }
 
-  // เปิดรูปสลิปในหน้าต่างขยายที่ซูมและเลื่อนได้
+  /// เปิดรูปสลิปในหน้าต่างขยายที่ซูมและเลื่อนได้
   Future<void> _showSlip(String imageUrl) async {
     await showDialog<void>(
       context: context,
@@ -476,27 +481,29 @@ class _OrderCardState extends State<_OrderCard> {
     );
   }
 
-  // แสดงข้อความแจ้งผลการทำงานด้านล่างหน้าจอ
+  /// แสดงข้อความแจ้งผลการทำงานด้านล่างหน้าจอ
   void _showMessage(String message) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(message)));
   }
 
-  // ใช้ข้อความจาก StateError หากมี มิฉะนั้นแสดงรายละเอียดข้อผิดพลาด
+  /// คืนข้อความจาก [StateError] หรือข้อความข้อผิดพลาดทั่วไป
   String _actionErrorMessage(Object error) => error is StateError
       ? error.message.toString()
       : 'ดำเนินการไม่สำเร็จ: $error';
 }
 
-// ป้ายสถานะออเดอร์ที่เลือกข้อความและสีตามสถานะ หรือแจ้งว่าหมดเวลาจอง
+/// ป้ายสถานะออเดอร์ หรือแจ้งเมื่อการจองหมดเวลา
 class _StatusBadge extends StatelessWidget {
+  /// สร้างป้ายสถานะออเดอร์ พร้อมตัวเลือกแสดงการจองหมดเวลา
   const _StatusBadge({required this.status, this.reservationExpired = false});
 
   // สถานะออเดอร์และ flag สำหรับกรณีการจองหมดเวลา
   final OrderStatus status;
   final bool reservationExpired;
 
+  /// สร้างป้ายพร้อมข้อความและสีตามสถานะหรือเวลาจอง
   @override
   Widget build(BuildContext context) {
     // สถานะหมดเวลาจองมีรูปแบบเฉพาะ และแสดงแทนป้ายสถานะปกติ
@@ -561,10 +568,12 @@ class _StatusBadge extends StatelessWidget {
   }
 }
 
-// กล่องภาพสำรองที่ใช้เมื่อไม่มีรูปสลิปหรือโหลดภาพไม่สำเร็จ
+/// กล่องภาพสำรองเมื่อไม่มีรูปสลิปหรือโหลดภาพไม่สำเร็จ
 class _SlipPlaceholder extends StatelessWidget {
+  /// สร้างกล่องภาพสำรองสำหรับสลิป
   const _SlipPlaceholder();
 
+  /// สร้างกล่องสำรองที่มีขนาดเท่าภาพสลิป
   @override
   Widget build(BuildContext context) {
     // กล่องขนาดเดียวกับภาพสลิป เพื่อรักษาการจัดวางของแถว

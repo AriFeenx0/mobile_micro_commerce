@@ -1,4 +1,4 @@
-// หน้าจัดการคูปองของเจ้าของร้าน แสดงรายการ เปิด/ปิดใช้งาน และสร้างคูปองใหม่
+/// แสดงและจัดการคูปองของเจ้าของร้าน รวมถึงการเปิดใช้งานและสร้างคูปอง
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -10,8 +10,10 @@ import '../../../services/coupon_service.dart';
 import 'coupon_form_screen.dart';
 
 class CouponManageScreen extends StatefulWidget {
+  /// สร้างหน้าจัดการคูปอง
   const CouponManageScreen({super.key});
 
+  /// สร้างสถานะของหน้าจัดการคูปอง
   @override
   State<CouponManageScreen> createState() => _CouponManageScreenState();
 }
@@ -21,6 +23,7 @@ class _CouponManageScreenState extends State<CouponManageScreen> {
   String? _streamOwnerId;
   Stream<List<CouponModel>>? _couponStream;
 
+  /// แสดงรายการคูปองแบบเรียลไทม์สำหรับเจ้าของร้านที่เข้าสู่ระบบ
   @override
   Widget build(BuildContext context) {
     final profile = context.watch<AuthProvider>().profile;
@@ -77,6 +80,7 @@ class _CouponManageScreenState extends State<CouponManageScreen> {
     );
   }
 
+  /// เปลี่ยนสถานะเปิดใช้งานคูปองและแจ้งเมื่อเกิดข้อผิดพลาด
   Future<void> _toggle(CouponModel coupon, bool value) async {
     try {
       await _couponService.setActive(coupon.id, value);
@@ -96,11 +100,13 @@ class _CouponManageScreenState extends State<CouponManageScreen> {
 }
 
 class _CouponTile extends StatelessWidget {
+  /// สร้างการ์ดสรุปคูปองพร้อมสวิตช์เปลี่ยนสถานะ
   const _CouponTile({required this.coupon, required this.onToggle});
 
   final CouponModel coupon;
   final ValueChanged<bool> onToggle;
 
+  /// แสดงรายละเอียดส่วนลด การใช้งาน วันหมดอายุ และสถานะคูปอง
   @override
   Widget build(BuildContext context) {
     final discount = coupon.discountType == DiscountType.percent

@@ -1,16 +1,20 @@
-// โมเดลโปรไฟล์ผู้ใช้และบทบาทในระบบ
+/// โมเดลโปรไฟล์ผู้ใช้ บทบาท และข้อมูลบัญชีรับเงิน
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+/// บทบาทของผู้ใช้ในระบบ
 enum UserRole { customer, owner }
 
+/// แปลงข้อความบทบาทที่จัดเก็บเป็นค่า [UserRole]
 UserRole _roleFromString(String value) {
   return value == 'owner' ? UserRole.owner : UserRole.customer;
 }
 
+/// แปลงบทบาทผู้ใช้เป็นข้อความสำหรับจัดเก็บ
 String _roleToString(UserRole role) {
   return role == UserRole.owner ? 'owner' : 'customer';
 }
 
+/// เก็บข้อมูลโปรไฟล์และข้อมูลรับเงินของผู้ใช้
 class UserModel {
   final String id; // = Firebase Auth UID, ใช้เป็น Document ID ด้วย
   final String name;
@@ -25,6 +29,7 @@ class UserModel {
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
+  /// สร้างโมเดลผู้ใช้จากค่าที่กำหนด
   UserModel({
     required this.id,
     required this.name,
@@ -40,11 +45,11 @@ class UserModel {
     this.updatedAt,
   });
 
+  /// ระบุว่ามีชื่อธนาคารและเลขบัญชีครบถ้วนหรือไม่
   bool get hasBankAccount =>
       bankName.trim().isNotEmpty && bankAccountNumber.trim().isNotEmpty;
 
-  /// สร้าง UserModel จาก Firestore document
-  /// ใช้แบบ: UserModel.fromJson(doc.id, doc.data()!)
+  /// สร้างโมเดลผู้ใช้จากเอกสาร Firestore โดยใช้ [id] เป็น Document ID
   factory UserModel.fromJson(String id, Map<String, dynamic> json) {
     return UserModel(
       id: id,
@@ -62,8 +67,7 @@ class UserModel {
     );
   }
 
-  /// แปลงกลับเป็น Map สำหรับเขียนลง Firestore
-  /// หมายเหตุ: ไม่ใส่ 'id' เพราะ id คือ Document ID อยู่แล้ว ไม่ต้องซ้ำใน field
+  /// แปลงโมเดลเป็น Map สำหรับเขียนลง Firestore โดยไม่ซ้ำ Document ID ใน field
   Map<String, dynamic> toJson() {
     return {
       'name': name,
@@ -80,6 +84,7 @@ class UserModel {
     };
   }
 
+  /// สร้างสำเนาโดยแทนเฉพาะค่าที่ระบุ และอัปเดตเวลาแก้ไข
   UserModel copyWith({
     String? name,
     String? phone,
