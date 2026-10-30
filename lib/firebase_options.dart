@@ -15,6 +15,7 @@ import 'package:flutter/foundation.dart'
 /// );
 /// ```
 class DefaultFirebaseOptions {
+  /// เลือกการตั้งค่า Firebase ที่ตรงกับแพลตฟอร์มปัจจุบัน
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
       return web;

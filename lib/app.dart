@@ -29,6 +29,7 @@ import 'screens/profile/profile_screen.dart';
 class MainApp extends StatelessWidget {
 	const MainApp({super.key});
 
+	/// สร้างแอปหลัก พร้อมลงทะเบียน provider ธีม และเส้นทางหน้าจอทั้งหมด
 	@override
 	Widget build(BuildContext context) {
 		return MultiProvider(

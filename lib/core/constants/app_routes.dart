@@ -1,4 +1,4 @@
-// รวมชื่อเส้นทางสำหรับนำทางในแอป
+/// รวมค่าชื่อเส้นทางที่ใช้สำหรับนำทางภายในแอป
 abstract final class AppRoutes {
   static const login = '/login';
   static const register = '/register';

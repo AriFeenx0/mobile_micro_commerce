@@ -1,7 +1,9 @@
-// แถบนำทางหลักสำหรับหน้าฝั่งลูกค้า
+/// แถบนำทางหลักสำหรับหน้าฝั่งลูกค้า
 import 'package:flutter/material.dart';
 
+/// แสดงปลายทางนำทางของลูกค้าและส่งต่อการเลือก
 class CustomerBottomNav extends StatelessWidget {
+  /// สร้างแถบนำทางจากดัชนีปัจจุบันและ callback เมื่อเลือกปลายทาง
   const CustomerBottomNav({
     super.key,
     required this.selectedIndex,
@@ -11,6 +13,7 @@ class CustomerBottomNav extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
 
+  /// สร้างแถบนำทางพร้อมปลายทางสำหรับลูกค้า
   @override
   Widget build(BuildContext context) {
     return NavigationBar(

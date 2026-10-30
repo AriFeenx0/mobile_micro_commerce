@@ -1,4 +1,4 @@
-// หน้าจอแก้ไขข้อมูลโปรไฟล์ผู้ใช้
+/// หน้าจอแก้ไขและบันทึกชื่อกับเบอร์โทรศัพท์ของโปรไฟล์ผู้ใช้
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -7,6 +7,7 @@ import '../../providers/auth_provider.dart';
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
 
+  /// สร้างสถานะสำหรับแบบฟอร์มแก้ไขโปรไฟล์
   @override
   State<EditProfileScreen> createState() => _EditProfileScreenState();
 }
@@ -18,6 +19,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   bool _initialized = false;
   bool _saving = false;
 
+  /// เติมข้อมูลโปรไฟล์ลงในช่องกรอกเมื่อได้รับ dependencies
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -30,6 +32,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _initialized = true;
   }
 
+  /// คืนทรัพยากรของช่องกรอกข้อมูลเมื่อปิดหน้าจอ
   @override
   void dispose() {
     _nameController.dispose();
@@ -37,6 +40,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     super.dispose();
   }
 
+  /// แสดงแบบฟอร์มแก้ไขชื่อและเบอร์โทรศัพท์
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -86,6 +90,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
+  /// ตรวจสอบและบันทึกข้อมูลโปรไฟล์ผ่าน AuthProvider
   Future<void> _saveProfile() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     setState(() => _saving = true);

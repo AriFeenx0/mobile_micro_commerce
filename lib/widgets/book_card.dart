@@ -1,7 +1,9 @@
-// การ์ดสรุปหนังสือสำหรับแสดงในรายการ
+/// การ์ดสรุปหนังสือสำหรับแสดงในรายการ
 import 'package:flutter/material.dart';
 
+/// แสดงชื่อ ผู้แต่ง และราคาของหนังสือ พร้อม callback เมื่อแตะ
 class BookCard extends StatelessWidget {
+  /// สร้างการ์ดหนังสือและกำหนดการทำงานเมื่อแตะได้ตามต้องการ
   const BookCard({
     super.key,
     required this.title,
@@ -15,6 +17,7 @@ class BookCard extends StatelessWidget {
   final String price;
   final VoidCallback? onTap;
 
+  /// สร้างการ์ดสรุปข้อมูลหนังสือ
   @override
   Widget build(BuildContext context) {
     return Card(

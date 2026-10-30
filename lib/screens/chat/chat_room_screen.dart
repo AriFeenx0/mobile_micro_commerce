@@ -1,4 +1,4 @@
-﻿// หน้าห้องแชทระหว่างลูกค้ากับเจ้าของร้าน
+﻿/// จัดการและแสดงการสนทนาระหว่างลูกค้ากับเจ้าของร้าน รวมถึงรูปภาพแนบ
 // ใช้เก็บข้อมูลรูปภาพที่เลือกไว้ในหน่วยความจำ เพื่อแสดงตัวอย่างก่อนส่ง
 import 'dart:typed_data';
 
@@ -40,7 +40,7 @@ class ChatRoomScreen extends StatefulWidget {
   final bool showBack;
   final Widget? bottomNavigationBar;
 
-  // สร้างออบเจ็กต์ State สำหรับจัดการสถานะและวงจรชีวิตของหน้าจอ
+  /// สร้างสถานะและจัดการวงจรชีวิตของห้องแชท
   @override
   State<ChatRoomScreen> createState() => _ChatRoomScreenState();
 }
@@ -68,7 +68,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   // จำนวนข้อความจากรอบก่อน ใช้ตรวจจับข้อความใหม่เพื่อเลื่อนและอัปเดตสถานะอ่าน
   int _lastCount = 0;
 
-  // เริ่มติดตามข้อความของห้องนี้และทำเครื่องหมายข้อความที่มีว่าอ่านแล้ว
+  /// เริ่มติดตามข้อความของห้องนี้และทำเครื่องหมายข้อความที่มีว่าอ่านแล้ว
   @override
   void initState() {
     super.initState();
@@ -78,7 +78,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     _markRead();
   }
 
-  // แจ้งบริการแชทว่าผู้ใช้ปัจจุบันอ่านข้อความในห้องนี้แล้ว
+  /// แจ้งบริการแชทว่าผู้ใช้ปัจจุบันอ่านข้อความในห้องนี้แล้ว
   void _markRead() {
     _service
         .markRead(
@@ -89,7 +89,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         .catchError((_) {});
   }
 
-  // คืนทรัพยากรของตัวควบคุมเมื่อหน้าจอถูกนำออก
+  /// คืนทรัพยากรของตัวควบคุมเมื่อหน้าจอถูกนำออก
   @override
   void dispose() {
     _controller.dispose();
@@ -97,7 +97,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     super.dispose();
   }
 
-  // ส่งข้อความที่พิมพ์และ/หรือรูปภาพที่เลือกไปยังห้องสนทนา
+  /// ส่งข้อความที่พิมพ์และ/หรือรูปภาพที่เลือกไปยังห้องสนทนา
   Future<void> _send() async {
     // ตัดช่องว่างรอบข้อความและหยุดหากไม่มีเนื้อหาหรือกำลังส่งอยู่
     final text = _controller.text.trim();
@@ -149,7 +149,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
   }
 
-  // เปิดแกลเลอรี ให้ผู้ใช้เลือกรูป และเตรียมข้อมูลสำหรับตัวอย่าง
+  /// เปิดแกลเลอรี ให้ผู้ใช้เลือกรูป และเตรียมข้อมูลสำหรับตัวอย่าง
   Future<void> _pickImage() async {
     // ไม่เริ่มเลือกภาพซ้ำขณะกำลังเลือกหรือส่งข้อความ
     if (_pickingImage || _sending) return;
@@ -181,7 +181,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
   }
 
-  // เลื่อนรายการไปยังข้อความล่าสุดหลังเฟรมปัจจุบันวาดเสร็จ
+  /// เลื่อนรายการไปยังข้อความล่าสุดหลังเฟรมปัจจุบันวาดเสร็จ
   void _scrollToEnd() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
@@ -194,7 +194,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     });
   }
 
-  // สร้างโครงหน้าจอ แถบหัวข้อ รายการข้อความ และแถบเขียนข้อความ
+  /// สร้างโครงหน้าจอ แถบหัวข้อ รายการข้อความ และแถบเขียนข้อความ
   @override
   Widget build(BuildContext context) {
     // ใช้อักษรตัวแรกของชื่อเป็นรูปโปรไฟล์สำรองเมื่อแสดงหัวข้อห้องแชท
@@ -421,7 +421,7 @@ class _MessageBubble extends StatelessWidget {
   final String? imageUrl;
   final bool isMine;
 
-  // สร้างกล่องข้อความซึ่งอาจมีรูปภาพ ข้อความ หรือทั้งสองอย่าง
+  /// สร้างกล่องข้อความซึ่งอาจมีรูปภาพ ข้อความ หรือทั้งสองอย่าง
   @override
   Widget build(BuildContext context) {
     // คำนวณขนาดรูปภาพจากความกว้างหน้าจอเพื่อให้เหมาะกับพื้นที่แชท

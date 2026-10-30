@@ -1,7 +1,9 @@
+// ทดสอบการสร้างคูปอง การตรวจสอบเงื่อนไข และการคำนวณส่วนลด
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile_micro_commerce/models/coupon_model.dart';
 
+/// สร้างคูปองตัวอย่างโดยกำหนดเฉพาะค่าที่ต้องการทดสอบ
 CouponModel _coupon({
   DiscountType type = DiscountType.percent,
   double value = 10,
@@ -25,6 +27,7 @@ CouponModel _coupon({
   isActive: active,
 );
 
+/// จัดกลุ่มการทดสอบกฎและการคำนวณของคูปอง
 void main() {
   test('normalizeCode / isValidCode', () {
     expect(CouponModel.normalizeCode(' book50 '), 'BOOK50');

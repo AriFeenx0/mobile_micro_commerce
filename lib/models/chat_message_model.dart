@@ -1,6 +1,7 @@
-// โมเดลห้องแชทและข้อความ พร้อมแปลงข้อมูล Firestore
+/// โมเดลห้องแชทและข้อความ พร้อมการแปลงข้อมูล Firestore
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+/// เก็บข้อมูลผู้ร่วมสนทนาและสถานะล่าสุดของห้องแชท
 class ChatRoomModel {
   final String id; // แนะนำ: '${customerId}_${ownerId}' กันห้องซ้ำ
   final List<String> participants;
@@ -10,6 +11,7 @@ class ChatRoomModel {
   final Map<String, int> unreadCount; // key = userId
   final DateTime? createdAt;
 
+  /// สร้างโมเดลห้องแชทจากค่าที่กำหนด
   ChatRoomModel({
     required this.id,
     required this.participants,
@@ -20,11 +22,12 @@ class ChatRoomModel {
     this.createdAt,
   });
 
-  /// สร้าง id แบบกำหนดเอง ให้เรียกใช้ตอนสร้างห้องแชทใหม่
+  /// สร้างรหัสห้องแชทจากรหัสลูกค้าและเจ้าของร้าน
   static String buildRoomId(String customerId, String ownerId) {
     return '${customerId}_$ownerId';
   }
 
+  /// สร้างโมเดลห้องแชทจากข้อมูล Firestore
   factory ChatRoomModel.fromJson(String id, Map<String, dynamic> json) {
     return ChatRoomModel(
       id: id,
@@ -37,6 +40,7 @@ class ChatRoomModel {
     );
   }
 
+  /// แปลงข้อมูลห้องแชทเป็น Map สำหรับบันทึกลง Firestore
   Map<String, dynamic> toJson() {
     return {
       'participants': participants,
@@ -49,6 +53,7 @@ class ChatRoomModel {
   }
 }
 
+/// เก็บเนื้อหา ผู้ส่ง และสถานะการอ่านของข้อความในห้องแชท
 class ChatMessageModel {
   final String id;
   final String senderId;
@@ -57,6 +62,7 @@ class ChatMessageModel {
   final List<String> readBy;
   final DateTime? createdAt;
 
+  /// สร้างโมเดลข้อความจากค่าที่กำหนด
   ChatMessageModel({
     required this.id,
     required this.senderId,
@@ -66,6 +72,7 @@ class ChatMessageModel {
     this.createdAt,
   });
 
+  /// สร้างโมเดลข้อความจากข้อมูล Firestore
   factory ChatMessageModel.fromJson(String id, Map<String, dynamic> json) {
     return ChatMessageModel(
       id: id,
@@ -77,6 +84,7 @@ class ChatMessageModel {
     );
   }
 
+  /// แปลงข้อความเป็น Map สำหรับบันทึกลง Firestore
   Map<String, dynamic> toJson() {
     return {
       'senderId': senderId,

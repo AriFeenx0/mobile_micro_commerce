@@ -1,12 +1,14 @@
-// หน้าจอแก้ไขที่อยู่จัดส่งของลูกค้า
+/// หน้าจอสำหรับดูและบันทึกที่อยู่จัดส่งของลูกค้า
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/auth_provider.dart';
 
 class ShippingAddressScreen extends StatefulWidget {
+  /// สร้างหน้าจอแก้ไขที่อยู่จัดส่ง
   const ShippingAddressScreen({super.key});
 
+  /// สร้างสถานะของหน้าจอที่อยู่จัดส่ง
   @override
   State<ShippingAddressScreen> createState() => _ShippingAddressScreenState();
 }
@@ -16,6 +18,7 @@ class _ShippingAddressScreenState extends State<ShippingAddressScreen> {
   bool _initialized = false;
   bool _saving = false;
 
+  /// โหลดที่อยู่เดิมเมื่อหน้าจอได้รับ dependencies ครั้งแรก
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -25,12 +28,14 @@ class _ShippingAddressScreenState extends State<ShippingAddressScreen> {
     _initialized = true;
   }
 
+  /// คืนทรัพยากรของช่องกรอกที่อยู่
   @override
   void dispose() {
     _addressController.dispose();
     super.dispose();
   }
 
+  /// แสดงช่องกรอกและปุ่มบันทึกที่อยู่
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -66,6 +71,7 @@ class _ShippingAddressScreenState extends State<ShippingAddressScreen> {
     );
   }
 
+  /// บันทึกที่อยู่ใหม่ลงในโปรไฟล์และแจ้งผลแก่ผู้ใช้
   Future<void> _save() async {
     final auth = context.read<AuthProvider>();
     final profile = auth.profile;

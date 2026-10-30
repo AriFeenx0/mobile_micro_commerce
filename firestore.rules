@@ -1,25 +1,31 @@
 rules_version = '2';
 
+// กำหนดสิทธิ์อ่านและเขียนข้อมูล Firestore ตามบทบาทและเจ้าของข้อมูล
 service cloud.firestore {
   match /databases/{database}/documents {
 
     // ---------- Helper functions ----------
+    // ตรวจว่าคำขอปัจจุบันมีผู้ใช้ Firebase Authentication ลงชื่อเข้าใช้
     function isSignedIn() {
       return request.auth != null;
     }
 
+    // ตรวจว่าผู้ใช้ที่ลงชื่อเข้าใช้เป็นเจ้าของรหัสผู้ใช้ที่ระบุ
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    // อ่านบทบาทของผู้ใช้ปัจจุบันจากเอกสาร users
     function myRole() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
     }
 
+    // ตรวจว่าผู้ใช้ที่ลงชื่อเข้าใช้มีบทบาทเจ้าของร้าน
     function isShopOwner() {
       return isSignedIn() && myRole() == 'owner';
     }
 
+    // จำกัดการแก้ไขเล่มหนังสือให้เปลี่ยนได้เฉพาะข้อมูลการจองและเวลาอัปเดต
     function isValidReservationUpdate() {
       return request.resource.data.stock == resource.data.stock &&
              request.resource.data.diff(resource.data).affectedKeys()
@@ -28,6 +34,7 @@ service cloud.firestore {
              request.resource.data.reservations.keys().size() <= 100;
     }
 
+    // จำกัดการแก้ไขคูปองให้เปลี่ยนได้เฉพาะข้อมูลการจองและเวลาอัปเดต
     function isValidCouponReservationUpdate() {
       return request.resource.data.usedCount == resource.data.usedCount &&
              request.resource.data.diff(resource.data).affectedKeys()
@@ -56,6 +63,7 @@ service cloud.firestore {
              after.usedCount == before.usedCount;
     }
 
+    // ตรวจว่าการจองเล่มในคำสั่งซื้อมีข้อมูลและเวลาล็อกสต็อกที่ถูกต้อง
     function isValidReservationOrder(orderId) {
       let data = request.resource.data;
       return data.status == 'รอชำระเงิน' &&

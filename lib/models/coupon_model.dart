@@ -1,16 +1,20 @@
-// โมเดลคูปองและการคำนวณส่วนลด
+/// โมเดลคูปอง ฟังก์ชันแปลงข้อมูล และการคำนวณส่วนลด
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+/// ประเภทส่วนลดที่คูปองรองรับ
 enum DiscountType { percent, fixed }
 
+/// แปลงค่าประเภทส่วนลดจากข้อมูลที่จัดเก็บเป็น enum
 DiscountType _typeFromString(String value) {
   return value == 'fixed' ? DiscountType.fixed : DiscountType.percent;
 }
 
+/// แปลงประเภทส่วนลดเป็นค่าข้อความสำหรับจัดเก็บ
 String _typeToString(DiscountType type) {
   return type == DiscountType.fixed ? 'fixed' : 'percent';
 }
 
+/// เก็บเงื่อนไขการใช้คูปองและคำนวณส่วนลด
 class CouponModel {
   final String id;
   final String code;
@@ -26,6 +30,7 @@ class CouponModel {
   final bool isActive;
   final DateTime? createdAt;
 
+  /// สร้างโมเดลคูปองจากค่าที่กำหนด
   CouponModel({
     required this.id,
     required this.code,
@@ -44,11 +49,13 @@ class CouponModel {
   static final _codePattern = RegExp(r'^[A-Z0-9_-]{3,20}$');
 
   /// โค้ดคือ Document ID จึงต้องเป็นตัวพิมพ์ใหญ่และไม่มีอักขระต้องห้าม
+  /// ตัดช่องว่างและแปลงรหัสคูปองเป็นตัวพิมพ์ใหญ่
   static String normalizeCode(String raw) => raw.trim().toUpperCase();
 
+  /// ตรวจว่ารหัสคูปองมีรูปแบบที่รองรับหรือไม่
   static bool isValidCode(String code) => _codePattern.hasMatch(code);
 
-  /// นับการจองที่ยังมีผล เหมือนการนับการจองสต็อกของหนังสือ
+  /// นับรายการจองคูปองที่ยังมีผล ณ เวลา [now]
   static int activeReservationCount(Object? rawReservations, DateTime now) {
     if (rawReservations is! Map) return 0;
     return rawReservations.values.fold<int>(0, (total, value) {
@@ -63,16 +70,18 @@ class CouponModel {
     });
   }
 
+  /// ระบุว่ายังเหลือโควตาการใช้คูปองหรือไม่
   bool get hasQuotaLeft =>
       usageLimit <= 0 || usedCount + reservedCount < usageLimit;
 
+  /// ระบุว่าคูปองเปิดใช้งาน ยังไม่หมดอายุ และมีโควตาเหลือหรือไม่
   bool get isValidNow {
     if (!isActive) return false;
     if (expiresAt != null && !expiresAt!.isAfter(DateTime.now())) return false;
     return hasQuotaLeft;
   }
 
-  /// คืนข้อความเหตุผลที่ใช้ไม่ได้ หรือ null ถ้าใช้ได้
+  /// คืนเหตุผลที่ใช้คูปองไม่ได้ หรือ `null` หากผ่านเงื่อนไขพื้นฐาน
   String? invalidReason(double orderAmount, {String? shopOwnerId}) {
     if (shopOwnerId != null && ownerId != shopOwnerId) {
       return 'คูปองนี้ใช้กับร้านนี้ไม่ได้';
@@ -88,7 +97,7 @@ class CouponModel {
     return null;
   }
 
-  /// คำนวณส่วนลดจากยอดสินค้า (ไม่รวมค่าส่ง) ปัดเป็นทศนิยม 2 ตำแหน่ง
+  /// คำนวณส่วนลดจากยอดสินค้าโดยไม่ให้เกินยอดซื้อ และปัดสองตำแหน่ง
   double discountFor(double orderAmount) {
     final raw = discountType == DiscountType.percent
         ? orderAmount * (discountValue / 100)
@@ -97,12 +106,13 @@ class CouponModel {
     return (capped * 100).round() / 100;
   }
 
-  /// คำนวณส่วนลดจากยอดซื้อ คืนค่า 0 ถ้าใช้ไม่ได้หรือไม่ถึงขั้นต่ำ
+  /// คำนวณส่วนลดหลังตรวจเงื่อนไข และคืนศูนย์เมื่อคูปองใช้ไม่ได้
   double calculateDiscount(double orderAmount) {
     if (invalidReason(orderAmount) != null) return 0;
     return discountFor(orderAmount);
   }
 
+  /// สร้างโมเดลคูปองจากข้อมูล Firestore และนับการจองที่ยังมีผล
   factory CouponModel.fromJson(String id, Map<String, dynamic> json) {
     return CouponModel(
       id: id,
@@ -123,6 +133,7 @@ class CouponModel {
     );
   }
 
+  /// แปลงคูปองเป็น Map สำหรับบันทึกลง Firestore
   Map<String, dynamic> toJson() {
     return {
       'code': code,

@@ -1,4 +1,4 @@
-// หน้าจอสมัครบัญชีผู้ใช้ใหม่
+/// หน้าจอสมัครบัญชีใหม่ด้วยชื่อผู้ใช้ ชื่อ อีเมล และรหัสผ่าน
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -9,6 +9,7 @@ import '../../widgets/auth_form_components.dart';
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
+  /// สร้างสถานะสำหรับแบบฟอร์มสมัครสมาชิก
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
@@ -23,6 +24,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _authService = AuthService();
   bool _isSubmitting = false;
 
+  /// คืนทรัพยากรของช่องกรอกข้อมูลเมื่อปิดหน้าจอ
   @override
   void dispose() {
     _usernameController.dispose();
@@ -33,6 +35,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
+  /// แสดงแบบฟอร์มสมัครสมาชิกและข้อกำหนดของรหัสผ่าน
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -218,6 +221,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
+  /// สร้างช่องกรอกข้อมูลพร้อมป้ายกำกับและตัวตรวจสอบที่กำหนด
   Widget _buildField({
     required String label,
     required String hint,
@@ -257,11 +261,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
+  /// สร้างตัวตรวจสอบว่าค่าที่กรอกไม่ว่างหลังตัดช่องว่าง
   String? Function(String?) _requiredValidator(String message) => (value) {
     if (value?.trim().isEmpty ?? true) return message;
     return null;
   };
 
+  /// ตรวจสอบข้อมูลและลงทะเบียนบัญชีผ่านบริการยืนยันตัวตน
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
@@ -286,6 +292,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
+  /// แปลงข้อผิดพลาดการสมัครสมาชิกเป็นข้อความภาษาไทยสำหรับผู้ใช้
   String _friendlyError(Object error) {
     if (error is FirebaseAuthException) {
       return switch (error.code) {
@@ -305,6 +312,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง';
   }
 
+  /// แสดงข้อความแจ้งผลผ่าน SnackBar
   void _showMessage(String message) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()

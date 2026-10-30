@@ -1,9 +1,11 @@
+// ทดสอบพฤติกรรมหลักของโมเดลหนังสือ คูปอง และการสร้าง PromptPay payload
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile_micro_commerce/core/utils/promptpay.dart';
 import 'package:mobile_micro_commerce/models/book_model.dart';
 import 'package:mobile_micro_commerce/models/book_volume_model.dart';
 import 'package:mobile_micro_commerce/models/coupon_model.dart';
 
+/// จัดกลุ่มกรณีทดสอบของโมเดลและยูทิลิตีที่ใช้ในระบบร้านหนังสือ
 void main() {
   group('Test Case: BookModel', () {
     // ตรวจสอบว่าข้อมูลหลักของหนังสือถูกอ่านจาก JSON และผูกกับ ID ที่ระบุ
@@ -88,6 +90,7 @@ void main() {
   });
 
   group('Test Case: CouponModel', () {
+    /// สร้างคูปองตัวอย่างสำหรับตรวจสอบกฎและการคำนวณส่วนลด
     CouponModel coupon({
       DiscountType type = DiscountType.percent,
       double value = 10,

@@ -1,4 +1,4 @@
-// เก็บรายการหนังสือและสถานะตัวกรองไว้ระหว่างเปลี่ยนหน้า
+/// เก็บรายการหนังสือและสถานะตัวกรองไว้ระหว่างเปลี่ยนหน้า
 import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
@@ -8,6 +8,7 @@ import '../models/book_model.dart';
 import '../services/book_service.dart';
 
 class BookFilters {
+  /// สร้างชุดตัวกรองเริ่มต้นหรือกำหนดเงื่อนไขที่ต้องการ
   const BookFilters({
     this.query = '',
     this.category = 'ทั้งหมด',
@@ -28,6 +29,7 @@ class BookFilters {
   final double? minPrice;
   final double? maxPrice;
 
+  /// คัดลอกชุดตัวกรองโดยเปลี่ยนค่าที่ระบุหรือเคลียร์ช่วงราคาได้
   BookFilters copyWith({
     String? query,
     String? category,
@@ -54,6 +56,7 @@ class BookFilters {
 }
 
 class BookProvider extends ChangeNotifier {
+  /// เริ่มติดตามการเข้าสู่ระบบและโหลดหนังสือของผู้ใช้ปัจจุบัน
   BookProvider({BookService? bookService, FirebaseAuth? auth})
     : _bookService = bookService ?? BookService(),
       _auth = auth ?? FirebaseAuth.instance {
@@ -71,12 +74,22 @@ class BookProvider extends ChangeNotifier {
   BookFilters _draftFilters = const BookFilters();
   BookFilters _appliedFilters = const BookFilters();
 
+  /// รายการหนังสือแบบอ่านอย่างเดียว
   List<BookModel> get books => List.unmodifiable(_books);
+
+  /// ระบุว่ากำลังโหลดรายการหนังสือ
   bool get isLoading => _isLoading;
+
+  /// ข้อผิดพลาดล่าสุดจากการโหลดหนังสือ
   Object? get error => _error;
+
+  /// ตัวกรองที่กำลังแก้ไขก่อนนำไปใช้
   BookFilters get draftFilters => _draftFilters;
+
+  /// ตัวกรองที่ใช้คัดรายการหนังสืออยู่
   BookFilters get appliedFilters => _appliedFilters;
 
+  /// หมวดหมู่ที่มีในรายการ พร้อมตัวเลือกทั้งหมด
   List<String> get categories {
     final values = <String>{
       for (final book in _books) ...book.category,
@@ -84,10 +97,13 @@ class BookProvider extends ChangeNotifier {
     return ['ทั้งหมด', ...values];
   }
 
+  /// สำนักพิมพ์ที่มีอยู่ในรายการหนังสือ
   List<String> get publishers => _sortedValues(_books.map((book) => book.publisher));
 
+  /// ภาษาที่มีอยู่ในรายการหนังสือ
   List<String> get languages => _sortedValues(_books.map((book) => book.language));
 
+  /// จำนวนเงื่อนไขหมวดหมู่ ผู้เขียน สำนักพิมพ์ และภาษาที่กำลังใช้
   int get activeFilterCount {
     var count = 0;
     if (_appliedFilters.category != 'ทั้งหมด') count++;
@@ -97,6 +113,7 @@ class BookProvider extends ChangeNotifier {
     return count;
   }
 
+  /// หนังสือที่ตรงกับตัวกรองที่นำไปใช้แล้ว
   List<BookModel> get visibleBooks {
     final query = _appliedFilters.query.trim().toLowerCase();
     final category = _appliedFilters.category;
@@ -128,28 +145,33 @@ class BookProvider extends ChangeNotifier {
     }).toList();
   }
 
+  /// อัปเดตคำค้นทั้งในตัวกรองร่างและตัวกรองที่ใช้อยู่ทันที
   void setQuery(String query) {
     _draftFilters = _draftFilters.copyWith(query: query);
     _appliedFilters = _appliedFilters.copyWith(query: query);
     notifyListeners();
   }
 
+  /// อัปเดตหมวดหมู่ทั้งในตัวกรองร่างและตัวกรองที่ใช้อยู่ทันที
   void setCategory(String category) {
     _draftFilters = _draftFilters.copyWith(category: category);
     _appliedFilters = _appliedFilters.copyWith(category: category);
     notifyListeners();
   }
 
+  /// บันทึกเงื่อนไขร่างไว้จนกว่าจะนำไปใช้
   void updateDraftFilters(BookFilters filters) {
     _draftFilters = filters;
     notifyListeners();
   }
 
+  /// นำตัวกรองร่างทั้งหมดไปใช้กับรายการหนังสือ
   void applyFilters() {
     _appliedFilters = _draftFilters;
     notifyListeners();
   }
 
+  /// โหลดรายการหนังสือใหม่จากแหล่งข้อมูลที่ติดตามอยู่
   void refresh() {
     if (_subscribedUserId == null) return;
     _isLoading = _books.isEmpty;
@@ -158,6 +180,7 @@ class BookProvider extends ChangeNotifier {
     _subscribeToBooks();
   }
 
+  /// เปลี่ยนการติดตามรายการหนังสือเมื่อบัญชีผู้ใช้เปลี่ยน
   void _handleAuthChange(User? user) {
     if (user?.uid == _subscribedUserId) return;
     _subscribedUserId = user?.uid;
@@ -178,6 +201,7 @@ class BookProvider extends ChangeNotifier {
     _subscribeToBooks();
   }
 
+  /// สมัครรับรายการหนังสือและปรับสถานะเมื่อมีข้อมูลหรือข้อผิดพลาด
   void _subscribeToBooks() {
     _booksSubscription?.cancel();
     _booksSubscription = _bookService.watchBooks().listen(
@@ -197,10 +221,12 @@ class BookProvider extends ChangeNotifier {
     );
   }
 
+  /// ตรวจว่าหมวดหมู่ยังมีอยู่ในรายการหนังสือหรือไม่
   bool _categoriesContain(String category) =>
       category == 'ทั้งหมด' ||
       _books.any((book) => book.category.contains(category));
 
+  /// เคลียร์ตัวกรองที่ค่าไม่อยู่ในรายการหนังสือปัจจุบัน
   BookFilters _normalizeFilters(BookFilters filters) {
     return filters.copyWith(
       category: _categoriesContain(filters.category) ? filters.category : 'ทั้งหมด',
@@ -217,12 +243,14 @@ class BookProvider extends ChangeNotifier {
     );
   }
 
+  /// คืนค่าที่ไม่ว่างโดยไม่ซ้ำและเรียงตามตัวอักษร
   List<String> _sortedValues(Iterable<String> values) {
     final sorted = values.where((value) => value.trim().isNotEmpty).toSet().toList()
       ..sort();
     return sorted;
   }
 
+  /// ยกเลิกการติดตามการเข้าสู่ระบบและรายการหนังสือ
   @override
   void dispose() {
     _authSubscription.cancel();

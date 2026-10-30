@@ -5,6 +5,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'app.dart';
 import 'firebase_options.dart';
 
+/// เตรียม Flutter และ Firebase ก่อนแสดงวิดเจ็ตหลักของแอป
 Future<void> main() async {
 	WidgetsFlutterBinding.ensureInitialized();
 	await Firebase.initializeApp(

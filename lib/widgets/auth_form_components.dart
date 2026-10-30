@@ -1,6 +1,7 @@
-// รวมรูปแบบและส่วนประกอบฟอร์มเข้าสู่ระบบที่ใช้ร่วมกัน
+/// รวมรูปแบบและส่วนประกอบฟอร์มเข้าสู่ระบบที่ใช้ร่วมกัน
 import 'package:flutter/material.dart';
 
+/// ค่ารูปแบบและตัวช่วยสร้างองค์ประกอบของฟอร์มยืนยันตัวตน
 abstract final class AuthFormStyle {
   static const compactBreakpoint = 420.0;
   static const compactHorizontalPadding = 28.0;
@@ -18,6 +19,7 @@ abstract final class AuthFormStyle {
   static const buttonRadius = 14.0;
   static const buttonFontSize = 18.0;
 
+  /// สร้างพื้นที่แสดงโลโก้ตัวอย่างตามขนาดที่กำหนด
   static Widget logo() => Center(
     child: Container(
       width: logoSize,
@@ -35,6 +37,7 @@ abstract final class AuthFormStyle {
     ),
   );
 
+  /// สร้างป้ายข้อความพร้อมระยะเยื้องและรูปแบบตัวอักษรของฟอร์ม
   static Widget label(String text) => Padding(
     padding: const EdgeInsets.only(left: 14),
     child: Text(
@@ -43,6 +46,7 @@ abstract final class AuthFormStyle {
     ),
   );
 
+  /// สร้างการตกแต่งช่องกรอกข้อมูลโดยใช้ [hint] เป็นข้อความแนะนำ
   static InputDecoration inputDecoration(String hint) => InputDecoration(
     hintText: hint,
     hintStyle: const TextStyle(

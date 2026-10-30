@@ -1,4 +1,4 @@
-// ฟอร์มเพิ่มหรือแก้ไขหนังสือและข้อมูลสต็อก
+/// ฟอร์มเพิ่มหรือแก้ไขหนังสือ รูปภาพ และข้อมูลสต็อกแต่ละเล่ม
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
@@ -10,10 +10,12 @@ import '../../../services/book_service.dart';
 import '../../../widgets/auth_form_components.dart';
 
 class BookManageFormScreen extends StatefulWidget {
+  /// สร้างฟอร์มหนังสือ โดยระบุหนังสือเมื่อเป็นการแก้ไข
   const BookManageFormScreen({super.key, this.book});
 
   final BookModel? book;
 
+  /// สร้างสถานะของฟอร์มหนังสือ
   @override
   State<BookManageFormScreen> createState() => _BookManageFormScreenState();
 }
@@ -39,6 +41,7 @@ class _BookManageFormScreenState extends State<BookManageFormScreen> {
   bool _isLoadingVolumes = false;
   String? _volumeLoadError;
 
+  /// ตั้งค่าฟอร์มตามหนังสือเดิมหรือค่าเริ่มต้นสำหรับหนังสือใหม่
   @override
   void initState() {
     super.initState();
@@ -64,6 +67,7 @@ class _BookManageFormScreenState extends State<BookManageFormScreen> {
     _loadVolumes(book.id);
   }
 
+  /// คืนทรัพยากรของช่องกรอกและแถวข้อมูลเล่ม
   @override
   void dispose() {
     _titleController.dispose();
@@ -77,6 +81,7 @@ class _BookManageFormScreenState extends State<BookManageFormScreen> {
     super.dispose();
   }
 
+  /// แสดงฟอร์มรายละเอียด รูปภาพ และสต็อกของหนังสือ
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -276,6 +281,7 @@ class _BookManageFormScreenState extends State<BookManageFormScreen> {
     );
   }
 
+  /// แสดงรูปปกที่มีอยู่ รูปที่เลือก และปุ่มเพิ่มรูป
   Widget _buildImages() {
     final currentImageCount = _existingImageUrls.length + _images.length;
     return Column(
@@ -364,6 +370,7 @@ class _BookManageFormScreenState extends State<BookManageFormScreen> {
     );
   }
 
+  /// แสดงรูปย่อพร้อมปุ่มนำรูปออกจากฟอร์ม
   Widget _imageTile(Widget image, VoidCallback onRemove) {
     return Stack(
       children: [
@@ -389,6 +396,7 @@ class _BookManageFormScreenState extends State<BookManageFormScreen> {
     );
   }
 
+  /// สร้างช่องกรอกข้อความพร้อมป้ายกำกับและตัวตรวจสอบ
   Widget _buildTextField({
     required String label,
     required String hint,
@@ -422,6 +430,7 @@ class _BookManageFormScreenState extends State<BookManageFormScreen> {
     );
   }
 
+  /// สร้างชุดตัวเลือกแบบชิปสำหรับข้อมูลหนังสือ
   Widget _buildChoices({
     required String label,
     required List<String> options,
@@ -468,6 +477,7 @@ class _BookManageFormScreenState extends State<BookManageFormScreen> {
     );
   }
 
+  /// แสดงตารางราคาและสต็อกของแต่ละเล่ม
   Widget _buildVolumeTable() {
     return Column(
       children: [
@@ -499,6 +509,7 @@ class _BookManageFormScreenState extends State<BookManageFormScreen> {
     );
   }
 
+  /// แสดงแถวกรอกข้อมูลราคาและสต็อกของเล่มหนึ่ง
   Widget _buildVolumeRow(_VolumeFields row, int index) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -536,6 +547,7 @@ class _BookManageFormScreenState extends State<BookManageFormScreen> {
     );
   }
 
+  /// สร้างช่องตัวเลขสำหรับกรอกราคาและจำนวนสต็อก
   Widget _numberField({
     required TextEditingController controller,
     required String hint,
@@ -559,6 +571,7 @@ class _BookManageFormScreenState extends State<BookManageFormScreen> {
     );
   }
 
+  /// เปลี่ยนประเภทหนังสือและปรับจำนวนแถวข้อมูลเล่มให้สอดคล้อง
   void _setBookType(String value) {
     setState(() {
       _isSet = value == 'ชุดหลายเล่ม';
@@ -574,6 +587,7 @@ class _BookManageFormScreenState extends State<BookManageFormScreen> {
     });
   }
 
+  /// เพิ่มแถวข้อมูลเล่มเมื่อเลือกประเภทชุดหลายเล่ม
   void _addVolume() {
     if (!_isSet) {
       _showMessage('เลือกชุดหลายเล่มก่อนเพิ่มเล่ม');
@@ -584,6 +598,7 @@ class _BookManageFormScreenState extends State<BookManageFormScreen> {
     });
   }
 
+  /// ลบแถวเล่มที่เลือกและจัดลำดับหมายเลขเล่มใหม่
   void _removeVolume(int index) {
     if (index == 0 || _volumeRows.length <= 2) return;
     setState(() {
@@ -594,6 +609,7 @@ class _BookManageFormScreenState extends State<BookManageFormScreen> {
     });
   }
 
+  /// เลือกรูปปกเพิ่มเติมจากคลังรูปภาพ
   Future<void> _pickImages() async {
     try {
       final pickedImages = await _imagePicker.pickMultiImage(
@@ -609,6 +625,7 @@ class _BookManageFormScreenState extends State<BookManageFormScreen> {
     }
   }
 
+  /// ตรวจสอบข้อมูลและบันทึกหนังสือพร้อมข้อมูลเล่มและรูปภาพ
   Future<void> _saveBook() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     final ownerId = FirebaseAuth.instance.currentUser?.uid;
@@ -678,6 +695,7 @@ class _BookManageFormScreenState extends State<BookManageFormScreen> {
     }
   }
 
+  /// ขอการยืนยันก่อนลบหนังสือและข้อมูลเล่มทั้งหมด
   Future<void> _confirmDeleteBook() async {
     final book = widget.book;
     if (book == null) return;
@@ -717,6 +735,7 @@ class _BookManageFormScreenState extends State<BookManageFormScreen> {
     }
   }
 
+  /// โหลดข้อมูลเล่มเดิมเพื่อเติมลงในฟอร์มแก้ไข
   Future<void> _loadVolumes(String bookId) async {
     try {
       final volumes = await _bookService.getBookVolumes(bookId);
@@ -752,17 +771,20 @@ class _BookManageFormScreenState extends State<BookManageFormScreen> {
     }
   }
 
+  /// สร้างตัวตรวจสอบว่าค่าที่กรอกไม่ว่าง
   String? Function(String?) _required(String message) => (value) {
     if (value?.trim().isEmpty ?? true) return message;
     return null;
   };
 
+  /// ตรวจสอบว่าค่าตัวเลขไม่ว่างและไม่ติดลบ
   String? _validNonNegativeNumber(String? value, String label) {
     final number = double.tryParse(value?.trim() ?? '');
     if (number == null || number < 0) return 'กรอก$labelให้ถูกต้อง';
     return null;
   }
 
+  /// แปลงข้อผิดพลาดจากการบันทึกเป็นข้อความที่เหมาะกับผู้ใช้
   String _saveErrorMessage(Object error) {
     if (error is FirebaseAuthException) {
       debugPrint('Book save auth error (${error.code}): ${error.message}');
@@ -792,6 +814,7 @@ class _BookManageFormScreenState extends State<BookManageFormScreen> {
     return 'บันทึกไม่สำเร็จ กรุณาตรวจสอบข้อมูลและลองใหม่';
   }
 
+  /// แสดงข้อความแจ้งผลผ่านแถบข้อความด้านล่าง
   void _showMessage(String message) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -800,6 +823,7 @@ class _BookManageFormScreenState extends State<BookManageFormScreen> {
 }
 
 class _VolumeFields {
+  /// สร้างข้อมูลเล่มพร้อมตัวควบคุมราคาและสต็อก
   _VolumeFields({required this.number, String price = '', String stock = '0'})
     : priceController = TextEditingController(text: price),
       stockController = TextEditingController(text: stock);
@@ -808,6 +832,7 @@ class _VolumeFields {
   final TextEditingController priceController;
   final TextEditingController stockController;
 
+  /// คืนทรัพยากรของตัวควบคุมข้อมูลเล่ม
   void dispose() {
     priceController.dispose();
     stockController.dispose();

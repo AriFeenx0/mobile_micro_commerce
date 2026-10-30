@@ -1,4 +1,4 @@
-﻿// หน้าแชทตามบทบาท: ลูกค้าเข้าห้องแชทเลย ส่วนเจ้าของเห็นรายชื่อลูกค้า
+﻿/// แสดงทางเข้าแชทของลูกค้าและรายชื่อลูกค้าสำหรับเจ้าของร้าน
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -15,6 +15,7 @@ import 'chat_room_screen.dart';
 class ChatListScreen extends StatelessWidget {
   const ChatListScreen({super.key});
 
+  /// เลือกหน้ารายชื่อหรือห้องแชทตามบทบาทของผู้ใช้
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
@@ -33,6 +34,7 @@ class _CustomerChat extends StatefulWidget {
 
   final UserModel customer;
 
+  /// สร้างสถานะเพื่อโหลดข้อมูลเจ้าของร้าน
   @override
   State<_CustomerChat> createState() => _CustomerChatState();
 }
@@ -40,6 +42,7 @@ class _CustomerChat extends StatefulWidget {
 class _CustomerChatState extends State<_CustomerChat> {
   late final Future<UserModel?> _owner = ChatService().getOwner();
 
+  /// เปิดห้องแชทกับเจ้าของร้าน หรือแสดงสถานะเมื่อยังไม่พบข้อมูล
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<UserModel?>(
@@ -67,6 +70,7 @@ class _CustomerChatState extends State<_CustomerChat> {
     );
   }
 
+  /// สร้างแถบนำทางด้านล่างของหน้าลูกค้า
   Widget _nav(BuildContext context) => CustomerBottomNav(
     selectedIndex: 2,
     onDestinationSelected: (index) {
@@ -86,6 +90,7 @@ class _OwnerChatList extends StatefulWidget {
 
   final UserModel owner;
 
+  /// สร้างสถานะสำหรับติดตามรายชื่อลูกค้าและห้องสนทนา
   @override
   State<_OwnerChatList> createState() => _OwnerChatListState();
 }
@@ -97,6 +102,7 @@ class _OwnerChatListState extends State<_OwnerChatList> {
     widget.owner.id,
   );
 
+  /// แสดงรายชื่อลูกค้าเรียงตามเวลาข้อความล่าสุด
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -124,6 +130,7 @@ class _OwnerChatListState extends State<_OwnerChatList> {
                   room.id: room,
               };
               final customers = [...customerSnapshot.data!];
+              /// คืนเวลาข้อความล่าสุดของลูกค้า หรือเวลาเริ่มต้นเมื่อไม่มีห้อง
               DateTime time(UserModel c) =>
                   rooms[ChatRoomModel.buildRoomId(c.id, widget.owner.id)]
                       ?.lastMessageAt ??
@@ -197,6 +204,7 @@ class _CustomerTile extends StatelessWidget {
   final String ownerId;
   final VoidCallback onTap;
 
+  /// จัดรูปแบบเวลาข้อความเป็นเวลาในวันเดียวกันหรือวันที่
   String _formatTime(DateTime time) {
     final now = DateTime.now();
     final sameDay =
@@ -206,6 +214,7 @@ class _CustomerTile extends StatelessWidget {
         : DateFormat('d/M/yy').format(time);
   }
 
+  /// แสดงชื่อลูกค้า ข้อความล่าสุด เวลา และจำนวนข้อความที่ยังไม่อ่าน
   @override
   Widget build(BuildContext context) {
     final unread = room?.unreadCount[ownerId] ?? 0;

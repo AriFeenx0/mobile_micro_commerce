@@ -1,4 +1,4 @@
-// แสดงรายละเอียดหนังสือ เลือกเล่ม และเพิ่มสินค้าลงตะกร้า
+/// แสดงรายละเอียดหนังสือ ให้เลือกเล่มและจำนวนก่อนเพิ่มลงตะกร้า
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -12,6 +12,7 @@ class BookDetailScreen extends StatefulWidget {
 
   final BookModel book;
 
+  /// สร้างสถานะสำหรับติดตามเล่มที่เลือกและจำนวนสินค้า
   @override
   State<BookDetailScreen> createState() => _BookDetailScreenState();
 }
@@ -22,12 +23,14 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
   String? _selectedVolumeId;
   int _quantity = 1;
 
+  /// เริ่มติดตามข้อมูลเล่มและสต็อกของหนังสือ
   @override
   void initState() {
     super.initState();
     _volumesStream = _bookService.watchBookVolumes(widget.book.id);
   }
 
+  /// แสดงข้อมูลหนังสือ ตัวเลือกเล่ม และปุ่มเพิ่มลงตะกร้า
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -259,6 +262,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
     );
   }
 
+  /// เลือกเล่มที่ผู้ใช้ระบุ หรือเล่มพร้อมขายรายการแรก
   BookVolumeModel? _findSelectedVolume(List<BookVolumeModel> volumes) {
     for (final volume in volumes) {
       if (volume.id == _selectedVolumeId && volume.isAvailable) return volume;
@@ -269,12 +273,14 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
     return volumes.isEmpty ? null : volumes.first;
   }
 
+  /// ตรวจว่ามีเล่มที่เลือกหรือเล่มพร้อมขายสำหรับเพิ่มลงตะกร้าหรือไม่
   bool _hasAvailableSelection(List<BookVolumeModel> volumes) {
     final selected = volumes.where((volume) => volume.id == _selectedVolumeId);
     if (selected.isNotEmpty) return selected.first.isAvailable;
     return volumes.any((volume) => volume.isAvailable);
   }
 
+  /// จัดรูปแบบราคาเป็นเงินบาทโดยตัดทศนิยมที่เป็นศูนย์
   String _formatPrice(double price) {
     final amount = price % 1 == 0
         ? price.toStringAsFixed(0)
@@ -282,6 +288,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
     return '฿$amount / ชิ้น';
   }
 
+  /// ตรวจสต็อกล่าสุดและเพิ่มเล่มที่เลือกลงตะกร้า
   Future<void> _addToCart() async {
     final volumes = await _bookService.getBookVolumes(widget.book.id);
     if (!mounted) return;
@@ -343,6 +350,7 @@ class _VolumeOption extends StatelessWidget {
   final bool selected;
   final VoidCallback? onTap;
 
+  /// แสดงตัวเลือกเล่มพร้อมสถานะการเลือกและสต็อก
   @override
   Widget build(BuildContext context) {
     final available = volume.isAvailable;
@@ -387,6 +395,7 @@ class _QuantityButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback? onPressed;
 
+  /// แสดงปุ่มเพิ่มหรือลดจำนวนสินค้า
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -414,6 +423,7 @@ class _BookField extends StatelessWidget {
   final String label;
   final String value;
 
+  /// แสดงชื่อฟิลด์และค่ารายละเอียดหนังสือ
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -439,6 +449,7 @@ class _BookField extends StatelessWidget {
 class _ImageFallback extends StatelessWidget {
   const _ImageFallback();
 
+  /// แสดงภาพสำรองเมื่อหนังสือไม่มีภาพหรือโหลดภาพไม่ได้
   @override
   Widget build(BuildContext context) {
     return const ColoredBox(

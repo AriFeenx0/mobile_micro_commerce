@@ -1,4 +1,4 @@
-// แถบนำทางเจ้าของร้านพร้อมตัวบอกออเดอร์รอตรวจ
+/// แถบนำทางเจ้าของร้านพร้อมตัวบอกออเดอร์รอตรวจ
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -7,7 +7,9 @@ import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/order_service.dart';
 
+/// แสดงปลายทางนำทางเจ้าของร้านและแจ้งออเดอร์ที่รอตรวจสลิป
 class OwnerBottomNav extends StatelessWidget {
+  /// สร้างแถบนำทางจากดัชนีปัจจุบันและ callback เมื่อเลือกปลายทาง
   const OwnerBottomNav({
     super.key,
     required this.selectedIndex,
@@ -17,6 +19,7 @@ class OwnerBottomNav extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
 
+  /// ตรวจบทบาทและติดตามออเดอร์เพื่อแสดงตัวบอกรายการที่รอตรวจ
   @override
   Widget build(BuildContext context) {
     return Consumer<AuthProvider>(
@@ -37,6 +40,7 @@ class OwnerBottomNav extends StatelessWidget {
     );
   }
 
+  /// สร้างแถบนำทาง โดยแสดงตัวบอกเมื่อมีออเดอร์รอตรวจสลิป
   Widget _buildNavigation(BuildContext context, bool hasUnconfirmedOrder) {
     return NavigationBarTheme(
       data: NavigationBarThemeData(

@@ -1,6 +1,8 @@
+// ทดสอบการสร้าง payload PromptPay และการคำนวณ CRC-16
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile_micro_commerce/core/utils/promptpay.dart';
 
+/// ตรวจสอบรูปแบบ payload PromptPay และผลตรวจสอบ CRC
 void main() {
   test('สร้าง payload เบอร์โทรพร้อมยอดเงิน', () {
     final p = PromptPay.payload('0812345678', amount: 100);

@@ -1,7 +1,9 @@
+// ทดสอบการคำนวณยอดจองและจำนวนสต็อกที่พร้อมขายของแต่ละเล่ม
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile_micro_commerce/models/book_volume_model.dart';
 
+/// จัดกลุ่มการทดสอบพฤติกรรมการจองและสต็อกของเล่มหนังสือ
 void main() {
   group('BookVolumeModel reservations', () {
     test('counts active reservations and ignores expired payment holds', () {

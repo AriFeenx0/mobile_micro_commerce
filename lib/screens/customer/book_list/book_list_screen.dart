@@ -1,4 +1,4 @@
-// แสดงและค้นหารายการหนังสือสำหรับลูกค้า
+/// ตรวจสิทธิ์บัญชีและแสดงรายการหนังสือที่ลูกค้าค้นหาและกรองได้
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -14,6 +14,7 @@ import '../book_detail/book_detail_screen.dart';
 class BookListScreen extends StatefulWidget {
   const BookListScreen({super.key});
 
+  /// สร้างสถานะสำหรับค้นหาและตรวจสอบสิทธิ์เข้าถึงรายการหนังสือ
   @override
   State<BookListScreen> createState() => _BookListScreenState();
 }
@@ -25,6 +26,7 @@ class _BookListScreenState extends State<BookListScreen> {
   String? _profileUid;
   Future<UserModel?>? _profileFuture;
 
+  /// เตรียมช่องค้นหาด้วยคำค้นที่ใช้กรองอยู่ในปัจจุบัน
   @override
   void initState() {
     super.initState();
@@ -33,6 +35,7 @@ class _BookListScreenState extends State<BookListScreen> {
     );
   }
 
+  /// เปิดแผ่นตัวกรองหนังสือ
   Future<void> _showFilterSheet() async {
     await showModalBottomSheet<void>(
       context: context,
@@ -42,12 +45,14 @@ class _BookListScreenState extends State<BookListScreen> {
     );
   }
 
+  /// คืนทรัพยากรของช่องค้นหาเมื่อปิดหน้าจอ
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
   }
 
+  /// ตรวจสอบสถานะล็อกอินและบทบาทก่อนแสดงแค็ตตาล็อกหนังสือ
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<User?>(
@@ -110,6 +115,7 @@ class _BookListScreenState extends State<BookListScreen> {
     );
   }
 
+  /// แสดงแค็ตตาล็อกที่ค้นหาและกรองได้ พร้อมสถานะโหลดหรือข้อผิดพลาด
   Widget _buildCatalog() {
     return Scaffold(
       backgroundColor: Colors.white,
@@ -276,6 +282,7 @@ class _BookListScreenState extends State<BookListScreen> {
     );
   }
 
+  /// นำทางไปยังหน้าที่เลือกจากแถบนำทางลูกค้า
   void _onDestinationSelected(int index) {
     final route = switch (index) {
       1 => AppRoutes.customerCart,
@@ -286,17 +293,20 @@ class _BookListScreenState extends State<BookListScreen> {
     if (route != null) Navigator.pushReplacementNamed(context, route);
   }
 
+  /// โหลดโปรไฟล์ผู้ใช้อีกครั้งหลังตรวจสอบสิทธิ์ไม่สำเร็จ
   void _reloadProfile(String uid) {
     setState(() {
       _profileFuture = _authService.getUserProfile(uid);
     });
   }
 
+  /// ออกจากระบบและกลับไปยังหน้าเข้าสู่ระบบ
   Future<void> _signOut() async {
     await _authService.signOut();
     if (mounted) _goToLogin();
   }
 
+  /// กลับไปยังหน้าเข้าสู่ระบบและล้างเส้นทางก่อนหน้า
   void _goToLogin() {
     Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (_) => false);
   }
@@ -305,6 +315,7 @@ class _BookListScreenState extends State<BookListScreen> {
 class _BookFilterSheet extends StatefulWidget {
   const _BookFilterSheet();
 
+  /// สร้างสถานะสำหรับตัวกรองหนังสือ
   @override
   State<_BookFilterSheet> createState() => _BookFilterSheetState();
 }
@@ -313,6 +324,7 @@ class _BookFilterSheetState extends State<_BookFilterSheet> {
   late BookFilters _filters;
   late final TextEditingController _authorController;
 
+  /// เริ่มตัวกรองจากค่าที่ใช้งานอยู่และเติมชื่อผู้เขียน
   @override
   void initState() {
     super.initState();
@@ -320,12 +332,14 @@ class _BookFilterSheetState extends State<_BookFilterSheet> {
     _authorController = TextEditingController(text: _filters.author);
   }
 
+  /// คืนทรัพยากรของช่องกรอกชื่อผู้เขียน
   @override
   void dispose() {
     _authorController.dispose();
     super.dispose();
   }
 
+  /// แสดงตัวกรองหมวดหมู่ ผู้เขียน สำนักพิมพ์ และภาษา
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<BookProvider>();
@@ -486,6 +500,7 @@ class _BookFilterSheetState extends State<_BookFilterSheet> {
     );
   }
 
+  /// สร้างป้ายชื่อของแต่ละส่วนในแผ่นตัวกรอง
   Widget _buildSectionLabel(String label) {
     return Text(
       label,
@@ -497,6 +512,7 @@ class _BookFilterSheetState extends State<_BookFilterSheet> {
     );
   }
 
+  /// สร้างชุดตัวเลือกแบบชิปและแจ้งค่าที่ผู้ใช้เลือก
   Widget _buildOptions({
     required List<String> options,
     required String selected,
@@ -531,6 +547,7 @@ class _BookFilterSheetState extends State<_BookFilterSheet> {
     );
   }
 
+  /// สร้างรูปแบบช่องกรอกข้อมูลในแผ่นตัวกรอง
   InputDecoration _inputDecoration(String hint) {
     return InputDecoration(
       hintText: hint,
@@ -546,6 +563,7 @@ class _BookFilterSheetState extends State<_BookFilterSheet> {
     );
   }
 
+  /// ล้างตัวกรองชั่วคราวและคืนคำค้นที่ใช้งานอยู่
   void _clearFilters() {
     setState(() {
       _filters = BookFilters(
@@ -555,6 +573,7 @@ class _BookFilterSheetState extends State<_BookFilterSheet> {
     });
   }
 
+  /// นำตัวกรองชั่วคราวไปใช้แล้วปิดแผ่นตัวกรอง
   void _applyFilters() {
     final provider = context.read<BookProvider>();
     provider.updateDraftFilters(
@@ -571,6 +590,7 @@ class _BookCard extends StatelessWidget {
   final BookModel book;
   final VoidCallback onTap;
 
+  /// แสดงภาพ ชื่อ ผู้เขียน และหมวดหมู่ของหนังสือ
   @override
   Widget build(BuildContext context) {
     return Material(
@@ -636,6 +656,7 @@ class _CatalogState extends StatelessWidget {
   final String message;
   final VoidCallback? onRetry;
 
+  /// แสดงข้อความสถานะแค็ตตาล็อกและปุ่มลองใหม่ถ้ามี
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -666,6 +687,7 @@ class _AccessPage extends StatelessWidget {
   final VoidCallback? onAction;
   final bool showProgress;
 
+  /// แสดงสถานะการเข้าถึง พร้อมตัวเลือกดำเนินการหากกำหนดไว้
   @override
   Widget build(BuildContext context) {
     return Scaffold(

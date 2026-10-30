@@ -1,4 +1,4 @@
-// สร้างคำสั่งซื้อและจัดการสถานะกับสต็อกผ่าน Firestore
+/// สร้างคำสั่งซื้อและจัดการสถานะกับสต็อกผ่าน Firestore
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
@@ -8,6 +8,7 @@ import '../models/order_model.dart';
 import 'storage_service.dart';
 
 class OrderService {
+  /// ตั้งค่า Firebase และบริการอัปโหลดสลิป โดยรองรับ dependency สำหรับทดสอบ
   OrderService({
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
@@ -26,11 +27,13 @@ class OrderService {
   final FirebaseAuth _auth;
   final StorageService _storageService;
 
+  /// อ้างอิงคอลเลกชันคำสั่งซื้อ
   CollectionReference<Map<String, dynamic>> get _orders =>
       _firestore.collection(ordersCollection);
 
   static const reservationDuration = Duration(minutes: 15);
 
+  /// ตรวจข้อมูลและจองสต็อกกับคูปองพร้อมสร้างคำสั่งซื้อใน transaction
   Future<OrderModel> reserveOrder({
     required String ownerId,
     required List<OrderItem> items,
@@ -248,6 +251,7 @@ class OrderService {
     });
   }
 
+  /// อัปโหลดสลิปและเปลี่ยนคำสั่งซื้อเป็นรอตรวจสอบ หรือยกเลิกเมื่อหมดเวลา
   Future<void> submitSlip({
     required String orderId,
     required XFile slipImage,
@@ -353,6 +357,7 @@ class OrderService {
     }
   }
 
+  /// ยืนยันสลิปและหักสต็อกพร้อมบันทึกการใช้คูปองใน transaction
   Future<void> confirmPaymentAndDeductStock(String orderId) async {
     final owner = await _requireShopOwner();
     final orderReference = _orders.doc(orderId);
@@ -464,6 +469,7 @@ class OrderService {
     });
   }
 
+  /// ปฏิเสธสลิป ยกเลิกคำสั่งซื้อ และคืนการจองที่เกี่ยวข้อง
   Future<void> rejectPayment(
     String orderId, {
     String reason = 'สลิปไม่ถูกต้อง',
@@ -541,6 +547,7 @@ class OrderService {
     });
   }
 
+  /// ติดตามคำสั่งซื้อของร้านและเรียงจากรายการใหม่ไปเก่า
   Stream<List<OrderModel>> watchOrdersForOwner(String ownerId) {
     return _orders
         .where('ownerId', isEqualTo: ownerId)
@@ -548,6 +555,7 @@ class OrderService {
         .map((snapshot) => _sortOrders(snapshot.docs));
   }
 
+  /// ติดตามคำสั่งซื้อของลูกค้าและเรียงจากรายการใหม่ไปเก่า
   Stream<List<OrderModel>> watchOrdersForCustomer(String customerId) {
     return _orders
         .where('customerId', isEqualTo: customerId)
@@ -555,6 +563,7 @@ class OrderService {
         .map((snapshot) => _sortOrders(snapshot.docs));
   }
 
+  /// แปลงเอกสารเป็นคำสั่งซื้อและเรียงตามวันที่สร้าง
   List<OrderModel> _sortOrders(
     List<QueryDocumentSnapshot<Map<String, dynamic>>> documents,
   ) {
@@ -569,6 +578,7 @@ class OrderService {
     return orders;
   }
 
+  /// ตรวจสอบว่าผู้ใช้ปัจจุบันมีบทบาทเจ้าของร้าน
   Future<User> _requireShopOwner() async {
     final owner = _auth.currentUser;
     if (owner == null) throw StateError('กรุณาเข้าสู่ระบบก่อนจัดการคำสั่งซื้อ');
@@ -582,6 +592,7 @@ class OrderService {
     return owner;
   }
 
+  /// คืนเอกสารคูปองของคำสั่งซื้อเมื่อมีการระบุโค้ด
   DocumentReference<Map<String, dynamic>>? _couponReferenceFor(
     OrderModel order,
   ) {
@@ -590,6 +601,7 @@ class OrderService {
     return _firestore.collection(couponsCollection).doc(code);
   }
 
+  /// รวมจำนวนสินค้าตามเอกสารเล่มสำหรับตรวจและเปลี่ยนสต็อก
   Map<String, _StockChange> _stockChangesForItems(List<OrderItem> items) {
     if (items.isEmpty) throw StateError('คำสั่งซื้อไม่มีรายการสินค้า');
 
@@ -614,11 +626,13 @@ class OrderService {
     return stockChanges;
   }
 
+  /// แปลงข้อมูลการจองจาก Firestore เป็นแผนที่หรือแผนที่ว่าง
   Map<String, dynamic> _reservationsFrom(Object? rawReservations) {
     if (rawReservations is! Map) return {};
     return Map<String, dynamic>.from(rawReservations);
   }
 
+  /// รวมจำนวนสต็อกที่ถูกจองและยังไม่หมดอายุ
   int _activeReservationQuantity(
     Map<String, dynamic> reservations,
     int stock,
@@ -639,6 +653,7 @@ class OrderService {
 }
 
 class _StockChange {
+  /// เก็บเอกสารหนังสือเล่มและจำนวนรวมที่ต้องเปลี่ยนสต็อก
   const _StockChange({
     required this.reference,
     required this.bookId,

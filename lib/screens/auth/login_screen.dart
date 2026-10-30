@@ -1,4 +1,4 @@
-// หน้าจอเข้าสู่ระบบด้วยอีเมลและรหัสผ่าน
+/// หน้าจอเข้าสู่ระบบและขอรีเซ็ตรหัสผ่านด้วยอีเมล
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -10,6 +10,7 @@ import '../../widgets/auth_form_components.dart';
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
+  /// สร้างสถานะสำหรับแบบฟอร์มเข้าสู่ระบบ
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
@@ -21,6 +22,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _authService = AuthService();
   bool _isSubmitting = false;
 
+  /// คืนทรัพยากรของช่องกรอกข้อมูลเมื่อปิดหน้าจอ
   @override
   void dispose() {
     _emailController.dispose();
@@ -28,6 +30,7 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  /// แสดงแบบฟอร์มเข้าสู่ระบบและทางเลือกสมัครหรือรีเซ็ตรหัสผ่าน
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -188,6 +191,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  /// ตรวจสอบข้อมูลและเข้าสู่ระบบตามบัญชีที่ระบุ
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
@@ -214,6 +218,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  /// ส่งอีเมลรีเซ็ตรหัสผ่านหลังตรวจสอบรูปแบบอีเมล
   Future<void> _resetPassword() async {
     final email = _emailController.text.trim();
     if (email.isEmpty || !email.contains('@')) {
@@ -232,6 +237,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  /// แปลงข้อผิดพลาดการเข้าสู่ระบบเป็นข้อความภาษาไทยสำหรับผู้ใช้
   String _friendlyError(Object error) {
     if (error is FirebaseAuthException) {
       return switch (error.code) {
@@ -252,6 +258,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง';
   }
 
+  /// แสดงข้อความแจ้งผลผ่าน SnackBar
   void _showMessage(String message) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()

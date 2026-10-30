@@ -1,4 +1,4 @@
-// แสดงข้อมูลโปรไฟล์และเมนูตามบทบาทผู้ใช้
+/// แสดงข้อมูลโปรไฟล์และเมนูที่สอดคล้องกับบทบาทของผู้ใช้
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -12,8 +12,10 @@ import '../../widgets/navigation/owner_bottom_nav.dart';
 import 'shipping_address_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
+  /// สร้างหน้าจอโปรไฟล์
   const ProfileScreen({super.key});
 
+  /// แสดงโปรไฟล์ สถานะบัญชี และเมนูของผู้ใช้
   @override
   Widget build(BuildContext context) {
     return Consumer<AuthProvider>(
@@ -203,12 +205,14 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
+  /// ออกจากระบบและนำผู้ใช้กลับไปยังหน้าเข้าสู่ระบบ
   Future<void> _signOut(BuildContext context) async {
     await context.read<AuthProvider>().signOut();
     if (!context.mounted) return;
     Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (_) => false);
   }
 
+  /// เปลี่ยนไปยังหน้าที่เลือกจากแถบนำทางของลูกค้า
   void _navigateCustomer(BuildContext context, int index) {
     final route = switch (index) {
       0 => AppRoutes.customerBooks,
@@ -219,6 +223,7 @@ class ProfileScreen extends StatelessWidget {
     if (route != null) Navigator.pushReplacementNamed(context, route);
   }
 
+  /// เปลี่ยนไปยังหน้าที่เลือกจากแถบนำทางของเจ้าของร้าน
   void _navigateOwner(BuildContext context, int index) {
     final route = switch (index) {
       0 => AppRoutes.ownerDashboard,
@@ -231,12 +236,14 @@ class ProfileScreen extends StatelessWidget {
   }
 }
 
-// แถวเมนูคูปองของลูกค้า พร้อม badge จำนวนคูปองที่ใช้ได้
+/// แถวเมนูคูปองของลูกค้าพร้อม badge แสดงจำนวนคูปองที่ใช้ได้
 class _CouponMenuRow extends StatefulWidget {
+  /// สร้างแถวเมนูคูปองพร้อมการดำเนินการเมื่อแตะ
   const _CouponMenuRow({required this.onTap});
 
   final VoidCallback onTap;
 
+  /// สร้างสถานะสำหรับติดตามจำนวนคูปองที่ใช้งานได้
   @override
   State<_CouponMenuRow> createState() => _CouponMenuRowState();
 }
@@ -245,6 +252,7 @@ class _CouponMenuRowState extends State<_CouponMenuRow> {
   late final Stream<List<CouponModel>> _stream = CouponService()
       .watchActiveCoupons();
 
+  /// แสดงเมนูคูปองพร้อมจำนวนรายการที่ได้รับจากสตรีม
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<CouponModel>>(
@@ -260,6 +268,7 @@ class _CouponMenuRowState extends State<_CouponMenuRow> {
 }
 
 class _ProfileMenuRow extends StatelessWidget {
+  /// สร้างแถวเมนูโปรไฟล์พร้อมไอคอนและการดำเนินการ
   const _ProfileMenuRow({
     required this.icon,
     required this.title,
@@ -276,6 +285,7 @@ class _ProfileMenuRow extends StatelessWidget {
   final bool showChevron;
   final int badgeCount;
 
+  /// แสดงแถวเมนูพร้อม badge และตัวบอกการนำทางตามค่าที่กำหนด
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -319,12 +329,14 @@ class _ProfileMenuRow extends StatelessWidget {
 }
 
 class _ProfileState extends StatelessWidget {
+  /// สร้างหน้าสถานะโปรไฟล์พร้อมข้อความและการดำเนินการเสริม
   const _ProfileState({required this.message, this.actionLabel, this.onAction});
 
   final String message;
   final String? actionLabel;
   final VoidCallback? onAction;
 
+  /// แสดงข้อความสถานะและปุ่มเมื่อมีการระบุการดำเนินการ
   @override
   Widget build(BuildContext context) {
     return Scaffold(

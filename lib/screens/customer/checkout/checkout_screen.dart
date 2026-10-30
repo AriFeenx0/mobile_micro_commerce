@@ -1,4 +1,4 @@
-// รวบรวมที่อยู่และสรุปยอดก่อนเลือกวิธีชำระเงิน
+/// รวบรวมที่อยู่ สรุปยอด และวิธีชำระเงินก่อนจองคำสั่งซื้อ
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -16,6 +16,7 @@ enum _PaymentMethod { promptPay, bankTransfer }
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
 
+  /// สร้างสถานะสำหรับข้อมูลที่อยู่ คูปอง และการชำระเงิน
   @override
   State<CheckoutScreen> createState() => _CheckoutScreenState();
 }
@@ -32,6 +33,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final _couponService = CouponService();
   CouponModel? _appliedCoupon;
 
+  /// เติมที่อยู่จากโปรไฟล์เมื่อบัญชีที่ใช้งานเปลี่ยน
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -42,6 +44,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
   }
 
+  /// คืนทรัพยากรของช่องกรอกที่อยู่และคูปอง
   @override
   void dispose() {
     _addressController.dispose();
@@ -49,7 +52,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     super.dispose();
   }
 
-  // ตรวจคูปองเพื่อแสดงตัวอย่างส่วนลด ส่วนการจองสิทธิ์จริงทำใน reserveOrder
+  /// ตรวจคูปองเพื่อแสดงส่วนลดตัวอย่าง โดยจองสิทธิ์จริงเมื่อเริ่มสั่งซื้อ
   Future<void> _applyCoupon(CartProvider cart) async {
     final ownerIds = cart.items.map((item) => item.book.ownerId).toSet();
     if (ownerIds.length != 1 || ownerIds.single.isEmpty) {
@@ -78,6 +81,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
   }
 
+  /// แสดงที่อยู่ รายการสินค้า ส่วนลด วิธีชำระเงิน และยอดรวม
   @override
   Widget build(BuildContext context) {
     return Consumer<CartProvider>(
@@ -293,6 +297,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
+  /// ตรวจสอบข้อมูลและจองสินค้า ก่อนเปิดหน้าส่งหลักฐานการชำระเงิน
   Future<void> _startCheckout(CartProvider cart) async {
     final address = _addressController.text.trim();
     if (address.isEmpty) {
@@ -356,12 +361,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
   }
 
+  /// แสดงข้อความแจ้งผลผ่าน SnackBar
   void _showMessage(String message) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(message)));
   }
 
+  /// จัดรูปแบบราคาเป็นเงินบาทโดยตัดทศนิยมที่เป็นศูนย์
   String _formatPrice(double price) {
     final amount = price % 1 == 0
         ? price.toStringAsFixed(0)
@@ -375,6 +382,7 @@ class _SectionLabel extends StatelessWidget {
 
   final String label;
 
+  /// แสดงป้ายชื่อส่วนของหน้าชำระเงิน
   @override
   Widget build(BuildContext context) => Text(
     label,
@@ -387,6 +395,7 @@ class _OutlinedPanel extends StatelessWidget {
 
   final Widget child;
 
+  /// จัดเนื้อหาให้อยู่ในกรอบเส้นขอบสำหรับหน้าชำระเงิน
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -415,6 +424,7 @@ class _PaymentMethodOption extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
+  /// แสดงตัวเลือกวิธีชำระเงินพร้อมสถานะที่เลือก
   @override
   Widget build(BuildContext context) {
     return Material(
