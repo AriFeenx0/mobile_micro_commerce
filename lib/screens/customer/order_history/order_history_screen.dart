@@ -31,17 +31,16 @@ class OrderHistoryScreen extends StatelessWidget {
         return Scaffold(
           appBar: AppBar(
             title: const Text('ประวัติคำสั่งซื้อ'),
-            actions: [
-              TextButton.icon(
-                onPressed: () => Navigator.pushNamedAndRemoveUntil(
-                  context,
-                  AppRoutes.customerBooks,
-                  (_) => false,
-                ),
-                icon: const Icon(Icons.exit_to_app),
-                label: const Text('ออก'),
+            automaticallyImplyLeading: false,
+            leading: IconButton(
+              tooltip: 'ย้อนกลับ',
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () => Navigator.pushNamedAndRemoveUntil(
+                context,
+                AppRoutes.customerBooks,
+                (_) => false,
               ),
-            ],
+            ),
           ),
           body: StreamBuilder<List<OrderModel>>(
             stream: OrderService().watchOrdersForCustomer(profile.id),
