@@ -1,13 +1,18 @@
 /// แสดงภาพรวม รายได้ คำสั่งซื้อล่าสุด และข้อความใหม่ของเจ้าของร้าน
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/constants/app_routes.dart';
+import '../../../models/book_model.dart';
+import '../../../models/book_volume_model.dart';
 import '../../../models/chat_message_model.dart';
 import '../../../models/order_model.dart';
 import '../../../models/user_model.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../services/auth_service.dart';
+import '../../../services/book_service.dart';
 import '../../../services/chat_service.dart';
 import '../../../services/order_service.dart';
 import '../../../widgets/navigation/owner_bottom_nav.dart';
@@ -82,14 +87,16 @@ class DashboardScreen extends StatelessWidget {
                                     Expanded(
                                       child: _MetricPanel(
                                         label: 'รายได้รวม',
-                                        value: '฿${totalRevenue.toStringAsFixed(2)}',
+                                        value:
+                                            '฿${totalRevenue.toStringAsFixed(2)}',
                                       ),
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: _MetricPanel(
                                         label: 'รายได้วันนี้',
-                                        value: '฿${todayRevenue.toStringAsFixed(2)}',
+                                        value:
+                                            '฿${todayRevenue.toStringAsFixed(2)}',
                                       ),
                                     ),
                                   ],
@@ -100,20 +107,7 @@ class DashboardScreen extends StatelessWidget {
                                   value: '$unconfirmedCount',
                                 ),
                                 const SizedBox(height: 16),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 15,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFFFF7E4),
-                                    border: Border.all(
-                                      color: const Color(0xFFE9BE58),
-                                      width: 2,
-                                    ),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
+                                _LowStockBooksSection(ownerId: owner.id),
                                 const SizedBox(height: 16),
                                 Row(
                                   children: [
@@ -195,6 +189,200 @@ class DashboardScreen extends StatelessWidget {
           },
         );
       },
+    );
+  }
+}
+
+class _LowStockBooksSection extends StatefulWidget {
+  const _LowStockBooksSection({required this.ownerId});
+
+  final String ownerId;
+
+  @override
+  State<_LowStockBooksSection> createState() => _LowStockBooksSectionState();
+}
+
+class _LowStockBooksSectionState extends State<_LowStockBooksSection> {
+  static const _stockWarningThreshold = 5;
+
+  final _bookService = BookService();
+  final Map<String, BookModel> _books = {};
+  final Map<String, List<BookVolumeModel>> _volumes = {};
+  final Map<String, StreamSubscription<List<BookVolumeModel>>>
+  _volumeSubscriptions = {};
+  final Map<String, Object> _volumeErrors = {};
+  final Set<String> _loadingVolumeIds = {};
+  StreamSubscription<List<BookModel>>? _booksSubscription;
+  Object? _booksError;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _subscribeToBooks();
+  }
+
+  @override
+  void didUpdateWidget(covariant _LowStockBooksSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.ownerId != widget.ownerId) {
+      _subscribeToBooks();
+    }
+  }
+
+  void _subscribeToBooks() {
+    unawaited(_booksSubscription?.cancel());
+    for (final subscription in _volumeSubscriptions.values) {
+      unawaited(subscription.cancel());
+    }
+    _volumeSubscriptions.clear();
+    _books.clear();
+    _volumes.clear();
+    _volumeErrors.clear();
+    _loadingVolumeIds.clear();
+    _isLoading = true;
+    _booksError = null;
+
+    _booksSubscription = _bookService
+        .watchBooksByOwner(widget.ownerId)
+        .listen(
+          (books) {
+            if (!mounted) return;
+            final nextBooks = {for (final book in books) book.id: book};
+            final removedBookIds = _volumeSubscriptions.keys
+                .where((bookId) => !nextBooks.containsKey(bookId))
+                .toList();
+            for (final bookId in removedBookIds) {
+              unawaited(_volumeSubscriptions.remove(bookId)!.cancel());
+              _volumes.remove(bookId);
+              _volumeErrors.remove(bookId);
+              _loadingVolumeIds.remove(bookId);
+            }
+
+            final newBooks = books
+                .where((book) => !_volumeSubscriptions.containsKey(book.id))
+                .toList();
+            setState(() {
+              _books
+                ..clear()
+                ..addAll(nextBooks);
+              _isLoading = false;
+              _booksError = null;
+              _loadingVolumeIds.addAll(newBooks.map((book) => book.id));
+            });
+
+            for (final book in newBooks) {
+              _volumeSubscriptions[book.id] = _bookService
+                  .watchBookVolumes(book.id)
+                  .listen(
+                    (volumes) {
+                      if (!mounted) return;
+                      setState(() {
+                        _volumes[book.id] = volumes;
+                        _volumeErrors.remove(book.id);
+                        _loadingVolumeIds.remove(book.id);
+                      });
+                    },
+                    onError: (Object error) {
+                      if (!mounted) return;
+                      setState(() {
+                        _volumeErrors[book.id] = error;
+                        _loadingVolumeIds.remove(book.id);
+                      });
+                    },
+                  );
+            }
+          },
+          onError: (Object error) {
+            if (!mounted) return;
+            setState(() {
+              _booksError = error;
+              _isLoading = false;
+            });
+          },
+        );
+  }
+
+  @override
+  void dispose() {
+    unawaited(_booksSubscription?.cancel());
+    for (final subscription in _volumeSubscriptions.values) {
+      unawaited(subscription.cancel());
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final lowStockVolumes =
+        <({BookModel book, BookVolumeModel volume})>[
+          for (final book in _books.values)
+            for (final volume in _volumes[book.id] ?? const <BookVolumeModel>[])
+              if (volume.availableStock <= _stockWarningThreshold)
+                (book: book, volume: volume),
+        ]..sort(
+          (first, second) => first.volume.availableStock.compareTo(
+            second.volume.availableStock,
+          ),
+        );
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF7E4),
+        border: Border.all(color: const Color(0xFFE9BE58), width: 2),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.warning_amber_rounded, color: Color(0xFF9A6B00)),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'แจ้งเตือนหนังสือใกล้หมด',
+                  style: TextStyle(
+                    color: Color(0xFF292929),
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              if (lowStockVolumes.isNotEmpty)
+                Text(
+                  '${lowStockVolumes.length} รายการ',
+                  style: const TextStyle(
+                    color: Color(0xFF9A6B00),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (_booksError != null || _volumeErrors.isNotEmpty)
+            const Text(
+              'โหลดข้อมูลสต็อกหนังสือไม่สำเร็จ',
+              style: TextStyle(color: Color(0xFF9B1C1C)),
+            )
+          else if (_isLoading || _loadingVolumeIds.isNotEmpty)
+            const LinearProgressIndicator()
+          else if (lowStockVolumes.isEmpty)
+            const Text(
+              'ไม่มีหนังสือที่เหลือน้อย',
+              style: TextStyle(color: Color(0xFF666666)),
+            )
+          else
+            for (final entry in lowStockVolumes)
+              _DashboardRow(
+                title: '${entry.book.title} เล่ม ${entry.volume.volumeNumber}',
+                trailing: 'เหลือ ${entry.volume.availableStock} เล่ม',
+                unread: true,
+                onTap: () => Navigator.pushNamed(context, AppRoutes.ownerBooks),
+              ),
+        ],
+      ),
     );
   }
 }
